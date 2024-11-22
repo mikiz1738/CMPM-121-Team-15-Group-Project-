@@ -2,4 +2,4 @@
 
 # Tools Lead: Justin Xu
 # Engine Lead: Michael Wong
-#Design Lead: Vivian Kim
+# Design Lead: Vivian Kim
