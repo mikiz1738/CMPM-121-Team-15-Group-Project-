@@ -1,4 +1,4 @@
-# CMPM-121-Team-15-Group-Project-
+# Devlog Entry - 11/21/24
 
 # Tools Lead: Justin Xu
 # Engine Lead: Michael Wong
