@@ -18,9 +18,22 @@
  We anticipate that the most difficult aspect of this project is the sheer scale of it. Our group has very limited experience implementing and creating a game with so many elements as we have mostly been constrained to prototyping.
  We are hoping to learn more about implementing our ideas through our chosen framework, phaser, by building upon the knowledge and skills developed throughout CMPM 120 and CMPM 121. In addition, we hope to challenge ourselves outside of our comfort zone to transition from one language to another in an attempt to diversify our toolkits and help us to become more adaptable and flexible programmers.
 
-F0.f
-Adjacent Buddy Boost
-If a plant is next to another plant of the same type, it grows faster. (Cuts half the time to grow)
+[F0.a] You control a character moving over a 2D grid: In our game, the player controls a character (or avatar) that can navigate a 2D grid. The grid is represented visually, and the character is able to move across this grid based on player input. Movement is restricted to adjacent grid cells, allowing the character to interact with nearby plants, water sources, and sunlight levels.
 
-F0.g
-Victory condition: at least 5 plants reach growth stage 2 (fully grown)
+[F0.b] You advance time manually in the turn-based simulation: Time in the game advances in a turn-based manner. Each day is represented as a discrete turn, and the player manually advances time by pressing the space bar to "advance the day." This causes all the plants and other elements on the grid to update according to the time progression, such as growth and changes in sun and water levels.
+
+[F0.c] You can reap or sow plants on grid cells only when you are near them: The player can only interact with plants by sowing or reaping them when their character is adjacent to the corresponding grid cell. This ensures that interactions with plants are spatially constrained, and the player must be near the plant to perform actions like planting or harvesting.
+
+[F0.d] Grid cells have sun and water levels. The incoming sun and water for each cell is somehow randomly generated each turn. Sun energy cannot be stored in a cell (it is used immediately or lost) while water moisture can be slowly accumulated over several turns: Each grid cell has a sun energy and water moisture level that is randomly generated each turn. Sun energy is immediately consumed or lost as the day progresses, while water moisture accumulates over several turns. This dynamic affects plant growth, with plants requiring a certain amount of sun and water to grow. The system ensures that sun energy cannot be stored, while water can accumulate and be used over time, creating strategic gameplay.
+
+[F0.e] Each plant on the grid has a distinct type (e.g. one of 3 species) and a growth level (e.g. “level 1”, “level 2”, “level 3”): Every plant on the grid is assigned a type (e.g., plant species) and a growth level. The plants are dynamically categorized into growth stages, ranging from sprout (level 0) to fully grown (level 2). Each plant’s growth progress is tracked, and the player can observe the changes as time progresses. The plant type and growth stage determine how a plant reacts to sun, water, and nearby plants.
+
+[F0.f] Plants grow based on the amount of sunlight and water they receive, and the proximity of other plants can either help their growth. 
+Ours is called an Adjacent Buddy Boost where if a plant is next to another plant of the same type, it grows faster. (Cuts half the time to grow)
+
+[F0.g] The play scenario is completed when a specific condition is met, such as having a certain number of plants (e.g., 5) fully grown (growth stage 2). The system tracks the number of plants that have reached the required growth level, and once the condition is satisfied, the scenario is considered complete, and the player is notified of their success.
+
+Reflection:
+Looking back on how we achieved the F0 requirements, our initial plan has evolved somewhat in response to challenges and new insights during development. At the start, we focused heavily on implementing basic movement and plant interactions, but we quickly realized that the requirements called for more complex systems like balancing the growth mechanics with sun and water resources.
+
+As we worked on the game, we also reconsidered some of our tools and materials. For example, we initially thought we could handle all plant growth and grid cell updates in a simple loop, but we ended up using flags and more intricate condition-checking logic to ensure that growth stages were tracked accurately and the scenario completion was triggered correctly.
