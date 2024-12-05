@@ -21,3 +21,6 @@
 F0.f
 Adjacent Buddy Boost
 If a plant is next to another plant of the same type, it grows faster. (Cuts half the time to grow)
+
+F0.g
+Victory condition: at least 5 plants reach growth stage 2 (fully grown)

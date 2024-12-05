@@ -19,7 +19,7 @@ export class Game extends Scene {
     offsetY: number;
     plantSprites: Phaser.GameObjects.Group;
     
-    completedScenario: boolean = false; // Track if the scenario is completed
+    victoryScenario: boolean = false; // Track if the scenario is completed
     fullyGrownPlants: number = 0; // Track the number of fully grown plants
 
     plantTypes = [
@@ -336,14 +336,14 @@ export class Game extends Scene {
         console.log(`Fully grown plants count: ${this.fullyGrownPlants}`);
 
         // Check if the scenario is completed
-        this.checkScenarioCompletion();
+        this.checkvictoryCompletion();
     }
 
     // Check if the play scenario is completed
-    checkScenarioCompletion() {
-        if (this.fullyGrownPlants >= 5 && !this.completedScenario) {
-            this.completedScenario = true;
-            console.log('Scenario Completed! At least 5 plants are fully grown.');
+    checkvictoryCompletion() {
+        if (this.fullyGrownPlants >= 5 && !this.victoryScenario) {
+            this.victoryScenario = true;
+            console.log('Victory! At least 5 plants are fully grown.');
             this.msg_text.setText(`Day: ${this.days} - Scenario Completed!`);
         }
     }
