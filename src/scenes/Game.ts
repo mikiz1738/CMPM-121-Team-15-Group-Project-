@@ -20,9 +20,26 @@ export class Game extends Scene {
     plantSprites: Phaser.GameObjects.Group;
 
     plantTypes = [
-        { name: 'Cactus', requiredWater: 2, requiredSunEnergy: 6, growthTime: 3, sprite: 'cactus' },
-        { name: 'Sunflower', requiredWater: 4, requiredSunEnergy: 8, growthTime: 5, sprite: 'sunflower' },
-        { name: 'Corn', requiredWater: 8, requiredSunEnergy: 4, growthTime: 7, sprite: 'corn' },
+        { 
+            name: 'Cactus', 
+            requiredWater: 2, 
+            requiredSunEnergy: 6, 
+            growthTime: 12, 
+            sprite: 'cactus' 
+        },
+        { 
+            name: 'Sunflower', 
+            requiredWater: 4, 
+            requiredSunEnergy: 8, 
+            growthTime: 10, 
+            sprite: 'sunflower' 
+        },
+        { 
+            name: 'Corn', 
+            requiredWater: 8, 
+            requiredSunEnergy: 4, 
+            growthTime: 8, 
+            sprite: 'corn' },
     ];
 
     constructor() {
@@ -108,6 +125,7 @@ export class Game extends Scene {
 
         this.plantSprites = this.add.group();
 
+        // Display tile information when hovering
         this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
             this.handlePointerHover(pointer);
         });
@@ -119,6 +137,7 @@ export class Game extends Scene {
             const tileX = Math.floor((pointer.x - this.offsetX) / this.tileWidth);
             const tileY = Math.floor((pointer.y - this.offsetY) / this.tileHeight);
 
+            // Check if the clicked tile is within bounds and if a plant is selected
             if (
                 tileX >= 0 &&
                 tileY >= 0 &&
@@ -135,6 +154,7 @@ export class Game extends Scene {
         });
     }
 
+    // Creates buttons for each plant type for the player to select
     createPlantButtons() {
         const buttonWidth = 120;
         const buttonHeight = 40;
@@ -170,6 +190,7 @@ export class Game extends Scene {
         });
     }
 
+    // Updates the appearance of the plant buttons to highlight the currently selected one
     updateButtonHighlights() {
         this.plantButtons.each((child: Phaser.GameObjects.GameObject) => {
             if (child instanceof Phaser.GameObjects.Rectangle) {
@@ -185,8 +206,8 @@ export class Game extends Scene {
             buttonBg.setFillStyle(0x5555ff); // Highlight color
         }
     }
-    
 
+    // Initializes tile attributes like water and sunlight levels, and sets plants to null
     initializeTileAttributes(level: number[][]) {
         for (let y = 0; y < level.length; y++) {
             this.tileAttributes[y] = [];
@@ -200,28 +221,35 @@ export class Game extends Scene {
         }
     }
 
+    // Checks if the player is near a specified tile based on distance calculation
     isNearTile(tileX: number, tileY: number): boolean {
+        // Calculate the center coordinates of the tile
         const tileCenterX = this.offsetX + tileX * this.tileWidth + this.tileWidth / 2;
         const tileCenterY = this.offsetY + tileY * this.tileHeight + this.tileHeight / 2;
+        
+        // Compute the distance between the player and the tile center
         const distance = Phaser.Math.Distance.Between(this.player.x, this.player.y, tileCenterX, tileCenterY);
-
         return distance <= this.tileWidth;
     }
 
+    // Handles planting functionality for a tile
     plant(tileX: number, tileY: number, plantType: number) {
         const tile = this.tileAttributes[tileY][tileX];
         const plant = this.plantTypes[plantType];
 
+        // Check if the player is near the tile
         if (!this.isNearTile(tileX, tileY)) {
             console.log('You need to be near the tile to plant!')
             return;
         }
 
+        // Prevent planting if the tile already has a crop
         if (tile.plant) {
             console.log('Tile already has a plant!');
             return;
         }
 
+        // Check if the tile has enough resources to support the plant
         if (tile.water >= plant.requiredWater && tile.sunEnergy >= plant.requiredSunEnergy) {
             tile.plant = { ...plant, growthStage: 0, daysPlanted: this.days };
             console.log(`Planted ${plant.name} at (${tileX}, ${tileY})`);
@@ -230,13 +258,17 @@ export class Game extends Scene {
         }
     }
 
+    // Handles reaping (harvesting) crops from a tile
     reap(tileX: number, tileY: number) {
         const tile = this.tileAttributes[tileY][tileX];
+        
+        // Check if the player is near the tile
         if (!this.isNearTile(tileX, tileY)) {
             console.log('You need to be near the tile to reap!');
             return;
         }
 
+        // If there's a plant, reap it and clear the tile
         if (tile.plant) {
             console.log(`Reaped ${tile.plant.name} from (${tileX}, ${tileY})`);
             tile.plant = null; // Remove the plant
@@ -248,26 +280,95 @@ export class Game extends Scene {
     advanceDay() {
         this.days++;
         this.msg_text.setText(`Day: ${this.days}`);
-
+    
         for (let y = 0; y < this.tileAttributes.length; y++) {
             for (let x = 0; x < this.tileAttributes[y].length; x++) {
                 const tile = this.tileAttributes[y][x];
-
+    
+                // Update sunlight and water
                 tile.sunEnergy = Math.random() * 10;
                 tile.water = Math.min(10, tile.water + Math.random() * 2);
-
+    
                 if (tile.plant) {
                     const plant = tile.plant;
-                    if (this.days - plant.daysPlanted >= plant.growthTime) {
+                    const daysSincePlanted = this.days - plant.daysPlanted;
+    
+                    // Check for the adjacent buddy boost
+                    const adjacentBonus = this.getAdjacentSameTypePlants(x, y, plant);
+                    const growthMultiplier = 1 - 0.5 * adjacentBonus; // Reduce growth time by 5% per adjacent plant
+    
+                    // Apply the growth multiplier to the original growth time
+                    const boostedGrowthTime = plant.growthTime * growthMultiplier;
+    
+                    // Ensure plant's growth time is not negative
+                    const effectiveGrowthTime = Math.max(boostedGrowthTime, 1);
+    
+                    // Check if growth conditions are met
+                    if (daysSincePlanted >= effectiveGrowthTime) {
                         plant.growthStage = 2; // Fully grown
-                    } else if (this.days - plant.daysPlanted >= plant.growthTime / 2) {
+                    } else if (daysSincePlanted >= effectiveGrowthTime / 2) {
                         plant.growthStage = 1; // Half-grown
+                    } else {
+                        plant.growthStage = 0; // Seed/initial stage
                     }
                 }
             }
         }
     }
+    
 
+    // method to check how many adjacent plants are of the same type
+    getAdjacentSameTypePlants(tileX: number, tileY: number, plant: any): number {
+        const neighbors = this.getNeighbors(tileX, tileY);
+        let adjacentBonus = 0;
+    
+        for (const neighbor of neighbors) {
+            const neighborTile = this.tileAttributes[neighbor.y][neighbor.x];
+            if (neighborTile.plant && neighborTile.plant.name === plant.name) {
+                adjacentBonus++; // Add to the bonus if the adjacent plant is of the same type
+            }
+        }
+    
+        return adjacentBonus; // Return the number of adjacent plants of the same type
+    }
+
+    // Determines if a plant can grow based on spatial rules
+    canGrow(tileX: number, tileY: number): boolean {
+        const neighbors = this.getNeighbors(tileX, tileY);
+        let supportingPlants = 0;
+
+        for (const neighbor of neighbors) {
+            const neighborTile = this.tileAttributes[neighbor.y][neighbor.x];
+            if (neighborTile.plant) {
+                supportingPlants++;
+            }
+        }
+
+        return supportingPlants >= 1; // Example rule: needs at least 1 neighboring plant
+    }
+
+    // Returns the coordinates of neighboring tiles
+    getNeighbors(tileX: number, tileY: number): { x: number; y: number }[] {
+        const neighbors = [];
+        const directions = [
+            { x: 0, y: -1 }, // Up
+            { x: 1, y: 0 },  // Right
+            { x: 0, y: 1 },  // Down
+            { x: -1, y: 0 }, // Left
+        ];
+
+        for (const dir of directions) {
+            const nx = tileX + dir.x;
+            const ny = tileY + dir.y;
+            if (nx >= 0 && ny >= 0 && ny < this.tileAttributes.length && nx < this.tileAttributes[ny].length) {
+                neighbors.push({ x: nx, y: ny });
+            }
+        }
+
+        return neighbors;
+    }
+
+    // Displays information about the tile under the cursor when hovering
     handlePointerHover(pointer: Phaser.Input.Pointer) {
         const tileX = Math.floor((pointer.x - this.offsetX) / this.tileWidth);
         const tileY = Math.floor((pointer.y - this.offsetY) / this.tileHeight);
@@ -329,7 +430,16 @@ export class Game extends Scene {
                         this.offsetY + y * this.tileHeight + this.tileHeight / 2,
                         plant.sprite
                     );
-                    sprite.setScale(0.5);
+
+                    // Adjust scale based on growth stage
+                    if (plant.growthStage === 0) {
+                        sprite.setScale(0.25); // Smallest size
+                    } else if (plant.growthStage === 1) {
+                        sprite.setScale(0.35); // Mid size
+                    } else if (plant.growthStage === 2) {
+                        sprite.setScale(0.45); // Fully grown size
+                    }
+
                     this.plantSprites.add(sprite);
                 }
             }
