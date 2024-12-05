@@ -1,8 +1,8 @@
 # Devlog Entry - 11/21/24
 
-## Tools Lead: Justin Xu
-## Engine Lead: Michael Wong
-## Design Lead: Vivian Kim
+### Tools Lead: Justin Xu
+### Engine Lead: Michael Wong
+### Design Lead: Vivian Kim
 
 ## Tools and Materials
  1. Our group has decided to use the phaser framework since we are most familiar with it through our experiences in CMPM 120 and CMPM 121. We believe that this framework is the most efficient way to create our game since it supports a diverse range of game genres and functionalities so that we don't have to develop those tools ourselves. Phaser also has a built in physics engine, which we believe will be useful as well. Furthermore, we also plan on using tween in order to support animation for sprites and other visual elements in our game.
