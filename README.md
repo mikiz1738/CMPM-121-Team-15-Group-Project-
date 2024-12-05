@@ -17,3 +17,7 @@
  Our team hopes to explore an unique game mechanic that sets us apart from other teams, focusing on an innovative interaction with the game world that may not be as commonly attempted. While the specifics are still evolving, we aim to create a mechanic that offers both strategic depth and simplicity, where players make meaningful decisions that impact the progression of the game. This could involve elements like resource management, spatial relationships, or time-based actions, all designed to provide a fresh gameplay experience. By focusing on a mechanic that is both approachable and engaging, we hope to offer something different that enhances the overall game experience while aligning with our team's goals of simplicity and efficiency.
  We anticipate that the most difficult aspect of this project is the sheer scale of it. Our group has very limited experience implementing and creating a game with so many elements as we have mostly been constrained to prototyping.
  We are hoping to learn more about implementing our ideas through our chosen framework, phaser, by building upon the knowledge and skills developed throughout CMPM 120 and CMPM 121. In addition, we hope to challenge ourselves outside of our comfort zone to transition from one language to another in an attempt to diversify our toolkits and help us to become more adaptable and flexible programmers.
+
+F0.f
+Adjacent Buddy Boost
+If a plant is next to another plant of the same type, it grows faster. (Cuts half the time to grow)
