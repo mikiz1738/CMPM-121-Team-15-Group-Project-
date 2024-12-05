@@ -18,6 +18,9 @@ export class Game extends Scene {
     offsetX: number;
     offsetY: number;
     plantSprites: Phaser.GameObjects.Group;
+    
+    completedScenario: boolean = false; // Track if the scenario is completed
+    fullyGrownPlants: number = 0; // Track the number of fully grown plants
 
     plantTypes = [
         { 
@@ -280,32 +283,46 @@ export class Game extends Scene {
     advanceDay() {
         this.days++;
         this.msg_text.setText(`Day: ${this.days}`);
-    
+
         for (let y = 0; y < this.tileAttributes.length; y++) {
             for (let x = 0; x < this.tileAttributes[y].length; x++) {
                 const tile = this.tileAttributes[y][x];
-    
+
                 // Update sunlight and water
                 tile.sunEnergy = Math.random() * 10;
                 tile.water = Math.min(10, tile.water + Math.random() * 2);
-    
+
                 if (tile.plant) {
                     const plant = tile.plant;
                     const daysSincePlanted = this.days - plant.daysPlanted;
-    
+
+                    // Check if plant has already fully grown
+                    if (plant.growthStage === 2) {
+                        // If the plant is fully grown, ensure it is only counted once
+                        if (!plant.hasReachedMaxGrowth) {
+                            this.fullyGrownPlants++; // Increment fully grown plant count
+                            plant.hasReachedMaxGrowth = true; // Mark as fully grown
+                        }
+                        continue; // Skip the growth stage calculation for fully grown plants
+                    }
+
                     // Check for the adjacent buddy boost
                     const adjacentBonus = this.getAdjacentSameTypePlants(x, y, plant);
                     const growthMultiplier = 1 - 0.5 * adjacentBonus; // Reduce growth time by 5% per adjacent plant
-    
+
                     // Apply the growth multiplier to the original growth time
                     const boostedGrowthTime = plant.growthTime * growthMultiplier;
-    
+
                     // Ensure plant's growth time is not negative
                     const effectiveGrowthTime = Math.max(boostedGrowthTime, 1);
-    
+
                     // Check if growth conditions are met
-                    if (daysSincePlanted >= effectiveGrowthTime) {
+                    if (daysSincePlanted >= effectiveGrowthTime && plant.growthStage < 2) {
                         plant.growthStage = 2; // Fully grown
+                        if (!plant.hasReachedMaxGrowth) {
+                            this.fullyGrownPlants++; // Increment fully grown plant count if it hasn't already been counted
+                            plant.hasReachedMaxGrowth = true; // Mark as fully grown
+                        }
                     } else if (daysSincePlanted >= effectiveGrowthTime / 2) {
                         plant.growthStage = 1; // Half-grown
                     } else {
@@ -314,8 +331,22 @@ export class Game extends Scene {
                 }
             }
         }
+
+        // Debugging: Output the number of fully grown plants
+        console.log(`Fully grown plants count: ${this.fullyGrownPlants}`);
+
+        // Check if the scenario is completed
+        this.checkScenarioCompletion();
     }
-    
+
+    // Check if the play scenario is completed
+    checkScenarioCompletion() {
+        if (this.fullyGrownPlants >= 5 && !this.completedScenario) {
+            this.completedScenario = true;
+            console.log('Scenario Completed! At least 5 plants are fully grown.');
+            this.msg_text.setText(`Day: ${this.days} - Scenario Completed!`);
+        }
+    }
 
     // method to check how many adjacent plants are of the same type
     getAdjacentSameTypePlants(tileX: number, tileY: number, plant: any): number {
