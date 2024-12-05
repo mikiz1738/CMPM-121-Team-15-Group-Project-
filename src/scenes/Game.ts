@@ -1,6 +1,7 @@
 import { Scene } from 'phaser';
 
 export class Game extends Scene {
+    // Declaring key variables for game elements
     camera: Phaser.Cameras.Scene2D.Camera;
     background: Phaser.GameObjects.TileSprite;
     msg_text: Phaser.GameObjects.Text;
@@ -39,6 +40,7 @@ export class Game extends Scene {
         this.camera = this.cameras.main;
 
         this.background = this.add.tileSprite(0, 0, 1024, 768, 'background').setOrigin(0, 0);
+        // Define the initial level layout as a 5x5 grid of tiles
         const level = [
             [0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0],
@@ -54,9 +56,9 @@ export class Game extends Scene {
             return;
         }
 
+        // Compute offsets to center the tilemap on the screen
         const tilemapWidth = level[0].length * this.tileWidth;
         const tilemapHeight = level.length * this.tileHeight;
-
         const gameWidth = this.scale.width;
         const gameHeight = this.scale.height;
 
@@ -68,6 +70,7 @@ export class Game extends Scene {
         // Initialize tile attributes
         this.initializeTileAttributes(level);
 
+        // Create an animation for walking
         this.anims.create({
             key: 'walk',
             frames: this.anims.generateFrameNumbers('player', { start: 1, end: 5 }),
@@ -75,15 +78,18 @@ export class Game extends Scene {
             repeat: -1,
         });
 
+        // Add the player's sprite to the scene
         this.player = this.physics.add.sprite(this.scale.width / 2, this.scale.height / 2, 'player');
         this.player.setCollideWorldBounds(true);
         this.player.setScale(2);
 
+        // Add a text element to display current day
         this.msg_text = this.add.text(10, 10, `Day: ${this.days}`, {
             font: '18px Arial',
             color: '#ffffff',
         });
 
+        // Add a tooltip text element for hovering over tiles
         this.hover_text = this.add.text(0, 0, '', {
             font: '16px Arial',
             color: '#ffcc00',
@@ -91,6 +97,7 @@ export class Game extends Scene {
             padding: { x: 5, y: 5 },
         }).setVisible(false);
 
+        // Define the player's movement keys (WASD + space for advancing day)
         this.cursors = this.input.keyboard?.addKeys({
             up: Phaser.Input.Keyboard.KeyCodes.W,
             down: Phaser.Input.Keyboard.KeyCodes.S,
@@ -107,7 +114,7 @@ export class Game extends Scene {
 
         this.createPlantButtons();
 
-        // Pointer down listener for planting
+        // Add a "pointerdown" event to plant on clicked tiles
         this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
             const tileX = Math.floor((pointer.x - this.offsetX) / this.tileWidth);
             const tileY = Math.floor((pointer.y - this.offsetY) / this.tileHeight);
@@ -119,7 +126,11 @@ export class Game extends Scene {
                 tileX < this.tileAttributes[tileY].length &&
                 this.selectedPlantType !== null
             ) {
-                this.plant(tileX, tileY, this.selectedPlantType);
+                if (this.selectedPlantType !== null) {
+                    this.plant(tileX, tileY, this.selectedPlantType);
+                } else {
+                    this.reap(tileX, tileY);
+                }
             }
         });
     }
@@ -189,9 +200,22 @@ export class Game extends Scene {
         }
     }
 
+    isNearTile(tileX: number, tileY: number): boolean {
+        const tileCenterX = this.offsetX + tileX * this.tileWidth + this.tileWidth / 2;
+        const tileCenterY = this.offsetY + tileY * this.tileHeight + this.tileHeight / 2;
+        const distance = Phaser.Math.Distance.Between(this.player.x, this.player.y, tileCenterX, tileCenterY);
+
+        return distance <= this.tileWidth;
+    }
+
     plant(tileX: number, tileY: number, plantType: number) {
         const tile = this.tileAttributes[tileY][tileX];
         const plant = this.plantTypes[plantType];
+
+        if (!this.isNearTile(tileX, tileY)) {
+            console.log('You need to be near the tile to plant!')
+            return;
+        }
 
         if (tile.plant) {
             console.log('Tile already has a plant!');
@@ -203,6 +227,21 @@ export class Game extends Scene {
             console.log(`Planted ${plant.name} at (${tileX}, ${tileY})`);
         } else {
             console.log('Insufficient resources to plant here!');
+        }
+    }
+
+    reap(tileX: number, tileY: number) {
+        const tile = this.tileAttributes[tileY][tileX];
+        if (!this.isNearTile(tileX, tileY)) {
+            console.log('You need to be near the tile to reap!');
+            return;
+        }
+
+        if (tile.plant) {
+            console.log(`Reaped ${tile.plant.name} from (${tileX}, ${tileY})`);
+            tile.plant = null; // Remove the plant
+        } else {
+            console.log('No plant to reap here!');
         }
     }
 
