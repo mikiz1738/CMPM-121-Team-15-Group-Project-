@@ -56,7 +56,125 @@ export class Game extends Scene {
         this.selectedPlantType = null;
     }
 
+    // Function to serialize the important states of each tilemap grid and day into a byte array (SoA format)
+    serializeStateToByteArray(): Uint8Array {
+        const waterArray: Float32Array = new Float32Array(this.tileAttributes.length * this.tileAttributes[0].length);
+        const sunlightArray: Float32Array = new Float32Array(this.tileAttributes.length * this.tileAttributes[0].length);
+        const plantArray: Int32Array = new Int32Array(this.tileAttributes.length * this.tileAttributes[0].length);
+        
+        let idx = 0;
+        for (let y = 0; y < this.tileAttributes.length; y++) {
+            for (let x = 0; x < this.tileAttributes[y].length; x++) {
+                const tile = this.tileAttributes[y][x];
+                waterArray[idx] = tile.water;
+                sunlightArray[idx] = tile.sunEnergy;
+
+                // Assuming plant is either null (0) or an object with a type number.
+                if (tile.plant) {
+                    plantArray[idx] = tile.plant.type;  // Or store a unique identifier if there are more attributes
+                } else {
+                    plantArray[idx] = -1;  // No plant in this tile
+                }
+
+                idx++;
+            }
+        }
+
+        // Convert to byte array
+        const byteArrays: Uint8Array[] = [];
+        
+        // Serialize the water array (Float32Array)
+        byteArrays.push(new Uint8Array(waterArray.buffer));
+        
+        // Serialize the sunlight array (Float32Array)
+        byteArrays.push(new Uint8Array(sunlightArray.buffer));
+        
+        // Serialize the plant array (Int32Array)
+        byteArrays.push(new Uint8Array(plantArray.buffer));
+        
+        // Serialize the current day (Int32)
+        const dayArray = new Int32Array(1);
+        dayArray[0] = this.days;
+        byteArrays.push(new Uint8Array(dayArray.buffer));
+
+        // Combine all byte arrays into a single Uint8Array
+        const totalLength = byteArrays.reduce((sum, arr) => sum + arr.length, 0);
+        const result = new Uint8Array(totalLength);
+        
+        let offset = 0;
+        for (const byteArray of byteArrays) {
+            result.set(byteArray, offset);
+            offset += byteArray.length;
+        }
+
+        return result;  // Return the final byte array
+    }
+
+    // Function to deserialize the byte array back into the game state
+    deserializeStateFromByteArray(byteArray: Uint8Array) {
+        const waterArray = new Float32Array(byteArray.buffer.slice(0, this.tileAttributes.length * this.tileAttributes[0].length * 4));
+        const sunlightArray = new Float32Array(byteArray.buffer.slice(this.tileAttributes.length * this.tileAttributes[0].length * 4, this.tileAttributes.length * this.tileAttributes[0].length * 8));
+        const plantArray = new Int32Array(byteArray.buffer.slice(this.tileAttributes.length * this.tileAttributes[0].length * 8, this.tileAttributes.length * this.tileAttributes[0].length * 12));
+        const dayArray = new Int32Array(byteArray.buffer.slice(this.tileAttributes.length * this.tileAttributes[0].length * 12));
+
+        let idx = 0;
+        for (let y = 0; y < this.tileAttributes.length; y++) {
+            for (let x = 0; x < this.tileAttributes[y].length; x++) {
+                const tile = this.tileAttributes[y][x];
+                tile.water = waterArray[idx];
+                tile.sunEnergy = sunlightArray[idx];
+                
+                if (plantArray[idx] !== -1) {
+                    tile.plant = { type: plantArray[idx], growthStage: 0, daysPlanted: this.days };  // You may want to initialize more plant attributes here.
+                } else {
+                    tile.plant = null;
+                }
+
+                idx++;
+            }
+        }
+
+        // Restore the day
+        this.days = dayArray[0];
+    }
+
+    saveGameState() {
+        // Serialize the current game state into a byte array
+        const byteArray = this.serializeStateToByteArray();
+    
+        // Convert the byte array into a base64 string for storage (localStorage can't store raw byte arrays directly)
+        const base64String = btoa(String.fromCharCode(...byteArray));
+    
+        // Store the base64 string in localStorage (or any other storage method you prefer)
+        localStorage.setItem('gameState', base64String);
+    
+        console.log('Game state saved!');
+    }
+
+    // Function to load the game state when a button is pressed
+    loadGameState() {
+        // Retrieve the base64 string from localStorage
+        const base64String = localStorage.getItem('gameState');
+
+        // If there's no saved state, return early
+        if (!base64String) {
+            console.log('No saved game state found.');
+            return;
+        }
+
+        // Convert the base64 string back into a byte array
+        const byteArray = new Uint8Array(atob(base64String).split('').map(char => char.charCodeAt(0)));
+
+        // Deserialize the byte array to restore the game state
+        this.deserializeStateFromByteArray(byteArray);
+
+        console.log('Game state loaded!');
+    }
+
+
+
     create() {
+
         this.camera = this.cameras.main;
 
         this.background = this.add.tileSprite(0, 0, 1024, 768, 'background').setOrigin(0, 0);
@@ -89,6 +207,34 @@ export class Game extends Scene {
 
         // Initialize tile attributes
         this.initializeTileAttributes(level);
+
+        const saveButton = this.add.text(800, 10, 'Save Game', {
+            fontSize: '32px',
+            color: '#000000',
+            backgroundColor: '#00ff00',
+            padding: { x: 20, y: 10 }
+        })
+        .setInteractive()
+        .setOrigin(0,0)
+        .on('pointerdown', () => this.saveGameState());
+
+        // Create load button
+        const loadButton = this.add.text(500, 10, 'Load Game', {
+            fontSize: '32px',
+            color: '#000000',
+            backgroundColor: '#ff0000',
+            padding: { x: 20, y: 10 }
+        })
+        .setInteractive()
+        .setOrigin(0,0)
+        .on('pointerdown', () => this.loadGameState());
+
+        // Optionally, add a hover effect
+        saveButton.on('pointerover', () => saveButton.setStyle({ fill: '#ff0' }));
+        saveButton.on('pointerout', () => saveButton.setStyle({ fill: '#fff' }));
+
+        loadButton.on('pointerover', () => loadButton.setStyle({ fill: '#ff0' }));
+        loadButton.on('pointerout', () => loadButton.setStyle({ fill: '#fff' }));
 
         // Create an animation for walking
         this.anims.create({
