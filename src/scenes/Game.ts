@@ -38,69 +38,110 @@ export class Game extends Scene {
 
      // -------------------- Game State Management --------------------
 
+    // fix the growing
+
     // Function to serialize the important states of each tilemap grid and day into a byte array (SoA format)
     serializeStateToByteArray() {
+        console.log("Starting serialization...");
+    
+        // Collect serialized data
         const waterArray = new Float32Array(this.tileAttributes.flatMap(row => row.map(tile => tile.water)));
         const sunlightArray = new Float32Array(this.tileAttributes.flatMap(row => row.map(tile => tile.sunEnergy)));
-        const plantArray = new Int32Array(this.tileAttributes.flatMap(row => row.map(tile => tile.plant ? tile.plant.type : -1)));
+        const plantArray = new Int32Array(this.tileAttributes.flatMap(row =>
+            row.map(tile => tile.plant ? this.plantTypes.findIndex(p => p.name === tile.plant.name) : -1)
+        ));
+        
         const growthStageArray = new Int32Array(this.tileAttributes.flatMap(row => row.map(tile => tile.plant ? tile.plant.growthStage : 0)));
-        const daysPlantedArray = new Int32Array([this.days]);
+        const daysPlantedArray = new Int32Array([this.days])
     
-        // Concatenate all arrays into one byte array
-        const byteArray = new Uint8Array(
-            waterArray.byteLength + 
-            sunlightArray.byteLength + 
-            plantArray.byteLength + 
-            growthStageArray.byteLength + 
-            daysPlantedArray.byteLength
-        );
+        // Debugging Logs
+        // console.log("Water Array:", waterArray);
+        // console.log("Sunlight Array:", sunlightArray);
+        console.log("Plant Array (indices):", plantArray);
+        console.log("Growth Stages:", growthStageArray);
+        console.log("Days Planted:", daysPlantedArray);
     
+        // Calculate byte sizes
+        const totalSize = waterArray.byteLength + sunlightArray.byteLength + plantArray.byteLength + growthStageArray.byteLength + daysPlantedArray.byteLength;
+    
+        // Concatenate arrays into one byte array
+        const byteArray = new Uint8Array(totalSize);
         let offset = 0;
+    
         byteArray.set(new Uint8Array(waterArray.buffer), offset);
         offset += waterArray.byteLength;
+    
         byteArray.set(new Uint8Array(sunlightArray.buffer), offset);
         offset += sunlightArray.byteLength;
+    
         byteArray.set(new Uint8Array(plantArray.buffer), offset);
         offset += plantArray.byteLength;
+    
         byteArray.set(new Uint8Array(growthStageArray.buffer), offset);
         offset += growthStageArray.byteLength;
+    
         byteArray.set(new Uint8Array(daysPlantedArray.buffer), offset);
+    
+        console.log("Serialized Byte Array:", byteArray);
+    
         return byteArray;
     }
     
+    
     // Function to deserialize the byte array back into the game state
     deserializeStateFromByteArray(byteArray: Uint8Array) {
-        const waterArray = new Float32Array(byteArray.buffer.slice(0, this.tileAttributes.length * this.tileAttributes[0].length * 4));
-        const sunlightArray = new Float32Array(byteArray.buffer.slice(this.tileAttributes.length * this.tileAttributes[0].length * 4, this.tileAttributes.length * this.tileAttributes[0].length * 8));
-        const plantArray = new Int32Array(byteArray.buffer.slice(this.tileAttributes.length * this.tileAttributes[0].length * 8, this.tileAttributes.length * this.tileAttributes[0].length * 12));
-        const growthStageArray = new Int32Array(byteArray.buffer.slice(this.tileAttributes.length * this.tileAttributes[0].length * 12, this.tileAttributes.length * this.tileAttributes[0].length * 16));
-        const daysPlantedArray = new Int32Array(byteArray.buffer.slice(this.tileAttributes.length * this.tileAttributes[0].length * 16));
-        
-        let idx = 0;
+        console.log("Starting deserialization...");
     
+        const tileCount = this.tileAttributes.length * this.tileAttributes[0].length;
+    
+        const waterArray = new Float32Array(byteArray.buffer.slice(0, tileCount * 4));
+        const sunlightArray = new Float32Array(byteArray.buffer.slice(tileCount * 4, tileCount * 8));
+        const plantArray = new Int32Array(byteArray.buffer.slice(tileCount * 8, tileCount * 12));
+        const growthStageArray = new Int32Array(byteArray.buffer.slice(tileCount * 12, tileCount * 16));
+        const daysPlantedArray = new Int32Array(byteArray.buffer.slice(tileCount * 16));
+    
+        console.log("Deserialized Plant Array (indices):", plantArray);
+        console.log("Deserialized Growth Stages:", growthStageArray);
+        console.log("Deserialized Days Planted:", daysPlantedArray);
+    
+        let idx = 0;
         for (let y = 0; y < this.tileAttributes.length; y++) {
             for (let x = 0; x < this.tileAttributes[y].length; x++) {
                 const tile = this.tileAttributes[y][x];
+                if (tile.plant) {
+                    console.log(
+                        `Tile (${x}, ${y}) - Plant found:`,
+                        `Days planted: ${tile.plant.daysPlanted}, Growth stage: ${tile.plant.growthStage}`
+                    );
+                }
                 tile.water = waterArray[idx];
                 tile.sunEnergy = sunlightArray[idx];
     
-                if (plantArray[idx] !== -1) {
-                    // Initialize plant with the type, growthStage, and daysPlanted
-                    const plantType = this.plantTypes[plantArray[idx]]; // Assuming you have plantTypes array
+                const plantIndex = plantArray[idx];
+                if (plantIndex >= 0 && plantIndex < this.plantTypes.length) {
                     tile.plant = {
-                        ...plantType, 
-                        growthStage: growthStageArray[idx], 
-                        daysPlanted: daysPlantedArray[idx]
+                        ...this.plantTypes[plantIndex],
+                        growthStage: growthStageArray[idx],
+                        daysPlanted: daysPlantedArray[idx],
+                        hasReachedMaxGrowth: growthStageArray[idx] === 2,
                     };
                 } else {
-                    tile.plant = null;
+                    tile.plant = null; // No plant
                 }
+    
                 idx++;
             }
         }
-        // Restore the day count
+    
         this.days = daysPlantedArray[0];
+        this.msg_text.setText(`Day: ${this.days}`);
+    
+        console.log("Deserialization completed.");
     }
+    
+    
+    
+    
 
     saveGameState(slot: number) {
         const byteArray = this.serializeStateToByteArray();
@@ -141,6 +182,8 @@ export class Game extends Scene {
         this.deserializeStateFromByteArray(byteArray);
     
         console.log(`Game state loaded from slot ${slot}!`);
+
+        this.refreshPlantGrowth();
     }
 
     create() {
@@ -474,6 +517,37 @@ export class Game extends Scene {
             this.hover_text.setVisible(false);
         }
     }
+    refreshPlantGrowth() {
+        for (let y = 0; y < this.tileAttributes.length; y++) {
+            for (let x = 0; x < this.tileAttributes[y].length; x++) {
+                const tile = this.tileAttributes[y][x];
+                if (tile.plant) {
+                    const plant = tile.plant;
+                    const daysSincePlanted = this.days - plant.daysPlanted;
+    
+                    if (plant.growthStage === 2) {
+                        // Already fully grown
+                        continue;
+                    }
+    
+                    // Check growth stages
+                    if (daysSincePlanted >= plant.growthTime) {
+                        plant.growthStage = 2; // Fully grown
+                        if (!plant.hasReachedMaxGrowth) {
+                            this.fullyGrownPlants++;
+                            plant.hasReachedMaxGrowth = true;
+                        }
+                    } else if (daysSincePlanted >= plant.growthTime / 2) {
+                        plant.growthStage = 1; // Half-grown
+                    } else {
+                        plant.growthStage = 0; // Seed stage
+                    }
+                }
+            }
+        }
+        console.log("Plant growth refreshed based on loaded state.");
+    }
+    
 
     update() {
         this.player.setVelocity(0);
@@ -528,3 +602,4 @@ export class Game extends Scene {
         }
     }
 }
+
