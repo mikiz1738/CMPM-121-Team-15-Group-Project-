@@ -57,119 +57,103 @@ export class Game extends Scene {
     }
 
     // Function to serialize the important states of each tilemap grid and day into a byte array (SoA format)
-    serializeStateToByteArray(): Uint8Array {
-        const waterArray: Float32Array = new Float32Array(this.tileAttributes.length * this.tileAttributes[0].length);
-        const sunlightArray: Float32Array = new Float32Array(this.tileAttributes.length * this.tileAttributes[0].length);
-        const plantArray: Int32Array = new Int32Array(this.tileAttributes.length * this.tileAttributes[0].length);
-        
-        let idx = 0;
-        for (let y = 0; y < this.tileAttributes.length; y++) {
-            for (let x = 0; x < this.tileAttributes[y].length; x++) {
-                const tile = this.tileAttributes[y][x];
-                waterArray[idx] = tile.water;
-                sunlightArray[idx] = tile.sunEnergy;
-
-                // Assuming plant is either null (0) or an object with a type number.
-                if (tile.plant) {
-                    plantArray[idx] = tile.plant.type;  // Or store a unique identifier if there are more attributes
-                } else {
-                    plantArray[idx] = -1;  // No plant in this tile
-                }
-
-                idx++;
-            }
-        }
-
-        // Convert to byte array
-        const byteArrays: Uint8Array[] = [];
-        
-        // Serialize the water array (Float32Array)
-        byteArrays.push(new Uint8Array(waterArray.buffer));
-        
-        // Serialize the sunlight array (Float32Array)
-        byteArrays.push(new Uint8Array(sunlightArray.buffer));
-        
-        // Serialize the plant array (Int32Array)
-        byteArrays.push(new Uint8Array(plantArray.buffer));
-        
-        // Serialize the current day (Int32)
-        const dayArray = new Int32Array(1);
-        dayArray[0] = this.days;
-        byteArrays.push(new Uint8Array(dayArray.buffer));
-
-        // Combine all byte arrays into a single Uint8Array
-        const totalLength = byteArrays.reduce((sum, arr) => sum + arr.length, 0);
-        const result = new Uint8Array(totalLength);
-        
+    serializeStateToByteArray() {
+        const waterArray = new Float32Array(this.tileAttributes.flatMap(row => row.map(tile => tile.water)));
+        const sunlightArray = new Float32Array(this.tileAttributes.flatMap(row => row.map(tile => tile.sunEnergy)));
+        const plantArray = new Int32Array(this.tileAttributes.flatMap(row => row.map(tile => tile.plant ? tile.plant.type : -1)));
+        const growthStageArray = new Int32Array(this.tileAttributes.flatMap(row => row.map(tile => tile.plant ? tile.plant.growthStage : 0)));
+        const daysPlantedArray = new Int32Array([this.days]);
+    
+        // Concatenate all arrays into one byte array
+        const byteArray = new Uint8Array(
+            waterArray.byteLength + 
+            sunlightArray.byteLength + 
+            plantArray.byteLength + 
+            growthStageArray.byteLength + 
+            daysPlantedArray.byteLength
+        );
+    
         let offset = 0;
-        for (const byteArray of byteArrays) {
-            result.set(byteArray, offset);
-            offset += byteArray.length;
-        }
-
-        return result;  // Return the final byte array
+        byteArray.set(new Uint8Array(waterArray.buffer), offset);
+        offset += waterArray.byteLength;
+        byteArray.set(new Uint8Array(sunlightArray.buffer), offset);
+        offset += sunlightArray.byteLength;
+        byteArray.set(new Uint8Array(plantArray.buffer), offset);
+        offset += plantArray.byteLength;
+        byteArray.set(new Uint8Array(growthStageArray.buffer), offset);
+        offset += growthStageArray.byteLength;
+        byteArray.set(new Uint8Array(daysPlantedArray.buffer), offset);
+    
+        return byteArray;
     }
+    
 
     // Function to deserialize the byte array back into the game state
     deserializeStateFromByteArray(byteArray: Uint8Array) {
         const waterArray = new Float32Array(byteArray.buffer.slice(0, this.tileAttributes.length * this.tileAttributes[0].length * 4));
         const sunlightArray = new Float32Array(byteArray.buffer.slice(this.tileAttributes.length * this.tileAttributes[0].length * 4, this.tileAttributes.length * this.tileAttributes[0].length * 8));
         const plantArray = new Int32Array(byteArray.buffer.slice(this.tileAttributes.length * this.tileAttributes[0].length * 8, this.tileAttributes.length * this.tileAttributes[0].length * 12));
-        const dayArray = new Int32Array(byteArray.buffer.slice(this.tileAttributes.length * this.tileAttributes[0].length * 12));
-
+        const growthStageArray = new Int32Array(byteArray.buffer.slice(this.tileAttributes.length * this.tileAttributes[0].length * 12, this.tileAttributes.length * this.tileAttributes[0].length * 16));
+        const daysPlantedArray = new Int32Array(byteArray.buffer.slice(this.tileAttributes.length * this.tileAttributes[0].length * 16));
+        
         let idx = 0;
+    
         for (let y = 0; y < this.tileAttributes.length; y++) {
             for (let x = 0; x < this.tileAttributes[y].length; x++) {
                 const tile = this.tileAttributes[y][x];
                 tile.water = waterArray[idx];
                 tile.sunEnergy = sunlightArray[idx];
-                
+    
                 if (plantArray[idx] !== -1) {
-                    tile.plant = { type: plantArray[idx], growthStage: 0, daysPlanted: this.days };  // You may want to initialize more plant attributes here.
+                    // Initialize plant with the type, growthStage, and daysPlanted
+                    const plantType = this.plantTypes[plantArray[idx]]; // Assuming you have plantTypes array
+                    tile.plant = {
+                        ...plantType, 
+                        growthStage: growthStageArray[idx], 
+                        daysPlanted: daysPlantedArray[idx]
+                    };
                 } else {
                     tile.plant = null;
                 }
-
+    
                 idx++;
             }
         }
-
-        // Restore the day
-        this.days = dayArray[0];
+    
+        // Restore the day count
+        this.days = daysPlantedArray[0];
     }
+    
 
     saveGameState() {
-        // Serialize the current game state into a byte array
         const byteArray = this.serializeStateToByteArray();
     
-        // Convert the byte array into a base64 string for storage (localStorage can't store raw byte arrays directly)
+        // Convert byte array to base64 string
         const base64String = btoa(String.fromCharCode(...byteArray));
-    
-        // Store the base64 string in localStorage (or any other storage method you prefer)
+        
+        // Store the base64 string in localStorage
         localStorage.setItem('gameState', base64String);
     
         console.log('Game state saved!');
     }
-
-    // Function to load the game state when a button is pressed
+    
     loadGameState() {
-        // Retrieve the base64 string from localStorage
         const base64String = localStorage.getItem('gameState');
-
-        // If there's no saved state, return early
+        
         if (!base64String) {
             console.log('No saved game state found.');
             return;
         }
-
-        // Convert the base64 string back into a byte array
+    
+        // Convert the base64 string back to a byte array
         const byteArray = new Uint8Array(atob(base64String).split('').map(char => char.charCodeAt(0)));
-
-        // Deserialize the byte array to restore the game state
+    
+        // Deserialize byte array to restore the game state
         this.deserializeStateFromByteArray(byteArray);
-
+    
         console.log('Game state loaded!');
     }
+    
 
 
 
