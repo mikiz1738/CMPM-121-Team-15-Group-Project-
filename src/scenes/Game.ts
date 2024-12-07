@@ -125,23 +125,36 @@ export class Game extends Scene {
     }
     
 
-    saveGameState() {
+    saveGameState(slot: number) {
         const byteArray = this.serializeStateToByteArray();
     
         // Convert byte array to base64 string
         const base64String = btoa(String.fromCharCode(...byteArray));
         
-        // Store the base64 string in localStorage
-        localStorage.setItem('gameState', base64String);
+        // Store the base64 string in localStorage with a slot-specific key
+        localStorage.setItem(`gameState_slot_${slot}`, base64String);
     
-        console.log('Game state saved!');
+        console.log(`Game state saved to slot ${slot}!`);
     }
     
-    loadGameState() {
-        const base64String = localStorage.getItem('gameState');
+    loadGameState(slot: number) {
+        const saveKey = `gameState_slot_${slot}`;
+        const base64String = localStorage.getItem(saveKey);
         
         if (!base64String) {
-            console.log('No saved game state found.');
+            console.log(`No saved game state found in slot ${slot}. Initializing empty state.`);
+            
+            // Initialize an empty state
+            for (let y = 0; y < this.tileAttributes.length; y++) {
+                for (let x = 0; x < this.tileAttributes[y].length; x++) {
+                    const tile = this.tileAttributes[y][x];
+                    tile.water = 0;
+                    tile.sunEnergy = 0;
+                    tile.plant = null;
+                }
+            }
+    
+            this.days = 0; // Reset the day counter
             return;
         }
     
@@ -151,8 +164,10 @@ export class Game extends Scene {
         // Deserialize byte array to restore the game state
         this.deserializeStateFromByteArray(byteArray);
     
-        console.log('Game state loaded!');
+        console.log(`Game state loaded from slot ${slot}!`);
     }
+    
+    
     
 
 
@@ -192,33 +207,40 @@ export class Game extends Scene {
         // Initialize tile attributes
         this.initializeTileAttributes(level);
 
-        const saveButton = this.add.text(800, 10, 'Save Game', {
-            fontSize: '32px',
-            color: '#000000',
-            backgroundColor: '#00ff00',
-            padding: { x: 20, y: 10 }
-        })
-        .setInteractive()
-        .setOrigin(0,0)
-        .on('pointerdown', () => this.saveGameState());
+        // Create buttons for save/load slots
+        const saveButtons: Phaser.GameObjects.Text[] = [];
+        const loadButtons: Phaser.GameObjects.Text[] = [];
+        const slots = 3; // Number of save slots
 
-        // Create load button
-        const loadButton = this.add.text(500, 10, 'Load Game', {
-            fontSize: '32px',
-            color: '#000000',
-            backgroundColor: '#ff0000',
-            padding: { x: 20, y: 10 }
-        })
-        .setInteractive()
-        .setOrigin(0,0)
-        .on('pointerdown', () => this.loadGameState());
+        for (let i = 0; i < slots; i++) {
+            const saveButton = this.add.text(800, 50 + i * 40, `Save Slot ${i + 1}`, {
+                fontSize: '20px',
+                color: '#ffffff',
+                backgroundColor: '#00ff00',
+                padding: { x: 10, y: 5 }
+            })
+            .setInteractive()
+            .on('pointerdown', () => this.saveGameState(i + 1)); // Call saveGameState with slot number
+            saveButtons.push(saveButton);
 
-        // Optionally, add a hover effect
-        saveButton.on('pointerover', () => saveButton.setStyle({ fill: '#ff0' }));
-        saveButton.on('pointerout', () => saveButton.setStyle({ fill: '#fff' }));
+            const loadButton = this.add.text(600, 50 + i * 40, `Load Slot ${i + 1}`, {
+                fontSize: '20px',
+                color: '#ffffff',
+                backgroundColor: '#ff0000',
+                padding: { x: 10, y: 5 }
+            })
+            .setInteractive()
+            .on('pointerdown', () => this.loadGameState(i + 1)); // Call loadGameState with slot number
+            loadButtons.push(loadButton);
+        }
 
-        loadButton.on('pointerover', () => loadButton.setStyle({ fill: '#ff0' }));
-        loadButton.on('pointerout', () => loadButton.setStyle({ fill: '#fff' }));
+        // Optionally add hover effects for buttons
+        [...saveButtons, ...loadButtons].forEach(button => {
+            button.on('pointerover', () => button.setStyle({ fill: '#ffff00' }));
+            button.on('pointerout', () => button.setStyle({ fill: '#ffffff' }));
+        });
+
+
 
         // Create an animation for walking
         this.anims.create({
