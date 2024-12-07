@@ -1,0 +1,131 @@
+// Helper functions for plant management, Plant Button Creation, 
+// Pointer Interaction Handling, tile interaction, etc.
+import Phaser from 'phaser';
+import { Game } from './Game.ts';  // Assuming Game is exported from the correct file
+
+
+export interface Plant {
+    name: string;
+    requiredWater: number;
+    requiredSunEnergy: number;
+    growthTime: number;
+    sprite: string;
+    growthStage: number;  // 0 = seed, 1 = half-grown, 2 = fully grown
+    daysPlanted: number;
+    hasReachedMaxGrowth: boolean;
+}
+
+export const plantTypes = [
+    { 
+        name: 'Cactus', 
+        requiredWater: 2, 
+        requiredSunEnergy: 6, 
+        growthTime: 12, 
+        sprite: 'cactus', 
+        growthStage: 0,
+        daysPlanted: 0,
+        hasReachedMaxGrowth: false,
+    },
+    { 
+        name: 'Sunflower', 
+        requiredWater: 4, 
+        requiredSunEnergy: 8, 
+        growthTime: 10, 
+        sprite: 'sunflower' ,
+        growthStage: 0,
+        daysPlanted: 0,
+        hasReachedMaxGrowth: false,
+    },
+    { 
+        name: 'Corn', 
+        requiredWater: 8, 
+        requiredSunEnergy: 4, 
+        growthTime: 8, 
+        sprite: 'corn',
+        growthStage: 0,
+        daysPlanted: 0,
+        hasReachedMaxGrowth: false,
+    },
+];
+
+// Creates buttons for each plant type for the player to select
+export function createPlantButtons(scene: Game) {
+    const buttonWidth = 120;
+    const buttonHeight = 40;
+    const spacing = 10;
+
+    const startX = 20;
+    const startY = scene.scale.height - (plantTypes.length * (buttonHeight + spacing)) - 20;
+
+    scene.plantButtons = scene.add.container();
+
+    plantTypes.forEach((plant, index) => {
+        const y = startY + index * (buttonHeight + spacing);
+
+        // Button background
+        const buttonBg = scene.add.rectangle(startX, y, buttonWidth, buttonHeight, 0x222222)
+            .setOrigin(0, 0)
+            .setInteractive({ useHandCursor: true }); // Makes it clickable
+
+        // Button text
+        const buttonText = scene.add.text(startX + 10, y + 10, plant.name, {
+            font: '18px Arial',
+            color: '#ffffff',
+        });
+
+        // Add click listener
+        buttonBg.on('pointerdown', () => {
+            scene.selectedPlantType = index; // Set the selected plant type
+            console.log(`Selected plant: ${plant.name}`);
+            updateButtonHighlights(scene); // Highlight the selected button
+        });
+
+        scene.plantButtons.add(buttonBg);
+        scene.plantButtons.add(buttonText);
+    });
+}
+
+export function updateButtonHighlights(scene: Game) {
+    scene.plantButtons.each((child: Phaser.GameObjects.GameObject) => {
+        if (child instanceof Phaser.GameObjects.Rectangle) {
+            // Reset all button colors
+            child.setFillStyle(0x222222);
+        }
+    });
+
+    // Highlight the selected button
+    const selectedButtonIndex = scene.selectedPlantType;
+    if (selectedButtonIndex !== null) {
+        const buttonBg = scene.plantButtons.getAt(selectedButtonIndex * 2) as Phaser.GameObjects.Rectangle;
+        if (buttonBg) {
+            buttonBg.setFillStyle(0x5555ff); // Highlight the selected button
+        }
+    }
+}
+
+// Create an animation for walking
+export function createWalkAnimation(scene: Game) {
+    scene.anims.create({
+        key: 'walk',
+        frames: scene.anims.generateFrameNumbers('player', { start: 1, end: 5 }),
+        frameRate: 10,
+        repeat: -1,
+    });
+}
+
+export function createPlayer(scene: Game) {
+    const player = scene.physics.add.sprite(scene.scale.width / 2, scene.scale.height / 2, 'player');
+    player.setCollideWorldBounds(true);
+    player.setScale(2);
+    return player;
+}
+
+export function createMovementKeys(scene: Game) {
+    return scene.cursors = scene.input.keyboard?.addKeys({
+        up: Phaser.Input.Keyboard.KeyCodes.W,
+        down: Phaser.Input.Keyboard.KeyCodes.S,
+        left: Phaser.Input.Keyboard.KeyCodes.A,
+        right: Phaser.Input.Keyboard.KeyCodes.D,
+        space: Phaser.Input.Keyboard.KeyCodes.SPACE,
+    }) as Phaser.Types.Input.Keyboard.CursorKeys;
+}

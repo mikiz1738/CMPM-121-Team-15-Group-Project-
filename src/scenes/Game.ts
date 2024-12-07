@@ -1,60 +1,42 @@
 import { Scene } from 'phaser';
+import { createPlantButtons, plantTypes , updateButtonHighlights } from './helpers';
+import { createWalkAnimation, createPlayer , createMovementKeys } from './helpers';
 
 export class Game extends Scene {
-    // Declaring key variables for game elements
     camera: Phaser.Cameras.Scene2D.Camera;
     background: Phaser.GameObjects.TileSprite;
     msg_text: Phaser.GameObjects.Text;
     hover_text: Phaser.GameObjects.Text;
     player: Phaser.Physics.Arcade.Sprite;
     cursors: Phaser.Types.Input.Keyboard.CursorKeys;
-    selectedPlantType: number | null; // Keep track of the selected plant type
-    plantButtons: Phaser.GameObjects.Container; // Container for plant buttons
 
     days: number;
-    tileAttributes: { water: number; sunEnergy: number; plant: any }[][];
     tileWidth: number;
     tileHeight: number;
     offsetX: number;
     offsetY: number;
-    plantSprites: Phaser.GameObjects.Group;
     
     victoryScenario: boolean = false; // Track if the scenario is completed
     fullyGrownPlants: number = 0; // Track the number of fully grown plants
 
-    plantTypes = [
-        { 
-            name: 'Cactus', 
-            requiredWater: 2, 
-            requiredSunEnergy: 6, 
-            growthTime: 12, 
-            sprite: 'cactus' 
-        },
-        { 
-            name: 'Sunflower', 
-            requiredWater: 4, 
-            requiredSunEnergy: 8, 
-            growthTime: 10, 
-            sprite: 'sunflower' 
-        },
-        { 
-            name: 'Corn', 
-            requiredWater: 8, 
-            requiredSunEnergy: 4, 
-            growthTime: 8, 
-            sprite: 'corn' },
-    ];
+    plantTypes = plantTypes;  // Store plant types here
+    plantButtons: Phaser.GameObjects.Container;
+    selectedPlantType: number | null;
+    tileAttributes: { water: number; sunEnergy: number; plant: any }[][];
+    plantSprites: Phaser.GameObjects.Group;
 
     constructor() {
         super('Game');
-        this.days = 0;
         this.tileAttributes = [];
         this.tileWidth = 75;
         this.tileHeight = 75;
+        this.days = 0;
         this.offsetX = 0;
         this.offsetY = 0;
         this.selectedPlantType = null;
     }
+
+     // -------------------- Game State Management --------------------
 
     // Function to serialize the important states of each tilemap grid and day into a byte array (SoA format)
     serializeStateToByteArray() {
@@ -83,11 +65,9 @@ export class Game extends Scene {
         byteArray.set(new Uint8Array(growthStageArray.buffer), offset);
         offset += growthStageArray.byteLength;
         byteArray.set(new Uint8Array(daysPlantedArray.buffer), offset);
-    
         return byteArray;
     }
     
-
     // Function to deserialize the byte array back into the game state
     deserializeStateFromByteArray(byteArray: Uint8Array) {
         const waterArray = new Float32Array(byteArray.buffer.slice(0, this.tileAttributes.length * this.tileAttributes[0].length * 4));
@@ -115,15 +95,12 @@ export class Game extends Scene {
                 } else {
                     tile.plant = null;
                 }
-    
                 idx++;
             }
         }
-    
         // Restore the day count
         this.days = daysPlantedArray[0];
     }
-    
 
     saveGameState(slot: number) {
         const byteArray = this.serializeStateToByteArray();
@@ -153,7 +130,6 @@ export class Game extends Scene {
                     tile.plant = null;
                 }
             }
-    
             this.days = 0; // Reset the day counter
             return;
         }
@@ -166,17 +142,11 @@ export class Game extends Scene {
     
         console.log(`Game state loaded from slot ${slot}!`);
     }
-    
-    
-    
-
-
 
     create() {
-
         this.camera = this.cameras.main;
-
         this.background = this.add.tileSprite(0, 0, 1024, 768, 'background').setOrigin(0, 0);
+
         // Define the initial level layout as a 5x5 grid of tiles
         const level = [
             [0, 0, 0, 0, 0],
@@ -240,20 +210,8 @@ export class Game extends Scene {
             button.on('pointerout', () => button.setStyle({ fill: '#ffffff' }));
         });
 
-
-
-        // Create an animation for walking
-        this.anims.create({
-            key: 'walk',
-            frames: this.anims.generateFrameNumbers('player', { start: 1, end: 5 }),
-            frameRate: 10,
-            repeat: -1,
-        });
-
-        // Add the player's sprite to the scene
-        this.player = this.physics.add.sprite(this.scale.width / 2, this.scale.height / 2, 'player');
-        this.player.setCollideWorldBounds(true);
-        this.player.setScale(2);
+        createWalkAnimation(this);
+        this.player = createPlayer(this);
 
         // Add a text element to display current day
         this.msg_text = this.add.text(10, 10, `Day: ${this.days}`, {
@@ -269,15 +227,7 @@ export class Game extends Scene {
             padding: { x: 5, y: 5 },
         }).setVisible(false);
 
-        // Define the player's movement keys (WASD + space for advancing day)
-        this.cursors = this.input.keyboard?.addKeys({
-            up: Phaser.Input.Keyboard.KeyCodes.W,
-            down: Phaser.Input.Keyboard.KeyCodes.S,
-            left: Phaser.Input.Keyboard.KeyCodes.A,
-            right: Phaser.Input.Keyboard.KeyCodes.D,
-            space: Phaser.Input.Keyboard.KeyCodes.SPACE,
-        }) as Phaser.Types.Input.Keyboard.CursorKeys;
-
+        this.cursors = createMovementKeys(this);
         this.plantSprites = this.add.group();
 
         // Display tile information when hovering
@@ -285,7 +235,8 @@ export class Game extends Scene {
             this.handlePointerHover(pointer);
         });
 
-        this.createPlantButtons();
+        createPlantButtons(this);
+        updateButtonHighlights(this);
 
         // Add a "pointerdown" event to plant on clicked tiles
         this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
@@ -309,61 +260,9 @@ export class Game extends Scene {
         });
     }
 
-    // Creates buttons for each plant type for the player to select
-    createPlantButtons() {
-        const buttonWidth = 120;
-        const buttonHeight = 40;
-        const spacing = 10;
-        const startX = 20;
-        const startY = this.scale.height - (this.plantTypes.length * (buttonHeight + spacing)) - 20;
-
-        this.plantButtons = this.add.container();
-
-        this.plantTypes.forEach((plant, index) => {
-            const y = startY + index * (buttonHeight + spacing);
-
-            // Button background
-            const buttonBg = this.add.rectangle(startX, y, buttonWidth, buttonHeight, 0x222222)
-                .setOrigin(0, 0)
-                .setInteractive({ useHandCursor: true }); // Makes it clickable
-
-            // Button text
-            const buttonText = this.add.text(startX + 10, y + 10, plant.name, {
-                font: '18px Arial',
-                color: '#ffffff',
-            });
-
-            // Add click listener
-            buttonBg.on('pointerdown', () => {
-                this.selectedPlantType = index; // Set the selected plant type
-                console.log(`Selected plant: ${plant.name}`);
-                this.updateButtonHighlights(); // Highlight the selected button
-            });
-
-            this.plantButtons.add(buttonBg);
-            this.plantButtons.add(buttonText);
-        });
-    }
-
-    // Updates the appearance of the plant buttons to highlight the currently selected one
-    updateButtonHighlights() {
-        this.plantButtons.each((child: Phaser.GameObjects.GameObject) => {
-            if (child instanceof Phaser.GameObjects.Rectangle) {
-                // Reset all button colors
-                child.setFillStyle(0x222222);
-            }
-        });
-    
-        // Highlight the selected button
-        const selectedButtonIndex = this.selectedPlantType;
-        if (selectedButtonIndex !== null) {
-            const buttonBg = this.plantButtons.getAt(selectedButtonIndex * 2) as Phaser.GameObjects.Rectangle;
-            buttonBg.setFillStyle(0x5555ff); // Highlight color
-        }
-    }
-
-    // Initializes tile attributes like water and sunlight levels, and sets plants to null
-    initializeTileAttributes(level: number[][]) {
+    // -------------------- Tile Management --------------------
+     // Initializes tile attributes like water and sunlight levels, and sets plants to null
+     initializeTileAttributes(level: number[][]) {
         for (let y = 0; y < level.length; y++) {
             this.tileAttributes[y] = [];
             for (let x = 0; x < level[y].length; x++) {
@@ -432,6 +331,7 @@ export class Game extends Scene {
         }
     }
 
+    // -------------------- Day Management --------------------
     advanceDay() {
         this.days++;
         this.msg_text.setText(`Day: ${this.days}`);
@@ -600,7 +500,6 @@ export class Game extends Scene {
         if (Phaser.Input.Keyboard.JustDown(this.cursors.space)) {
             this.advanceDay();
         }
-
         this.plantSprites.clear(true, true);
 
         for (let y = 0; y < this.tileAttributes.length; y++) {
