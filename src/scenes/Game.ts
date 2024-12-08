@@ -137,8 +137,6 @@ export class Game extends Scene {
         // Update the day text on the UI
         this.msg_text.setText(`Day: ${this.days}`);
     }
-
-
     
     
     saveGameState(slot: number, isAutoSave = false) {
@@ -172,12 +170,13 @@ export class Game extends Scene {
     
     loadAutoSave() {
         const base64String = localStorage.getItem('autoSave');
+        console.log(`This is tile attributes: ${this.tileAttributes}`)
         
         if (base64String) {
             const byteArray = new Uint8Array(atob(base64String).split('').map(char => char.charCodeAt(0)));
             this.deserializeStateFromByteArray(byteArray);
+            console.log(`${this.tileAttributes}`)
             console.log('Auto-save loaded.');
-            this.askContinue();
         } else {
             console.log('No auto-save found.');
             this.startNewGame(); // Start a new game if there's no auto-save
@@ -188,6 +187,8 @@ export class Game extends Scene {
         // Prompt the player to continue from the auto-save
         if (confirm("Do you want to continue where you left off?")) {
             console.log('Continuing from auto-save...');
+            this.loadAutoSave()
+            console.log(`${this.tileAttributes}`)
         } else {
             console.log('Starting new game...');
             this.startNewGame();
@@ -196,8 +197,9 @@ export class Game extends Scene {
     
     startNewGame() {
         // Logic for starting a new game (reset state, etc.)
+        localStorage.removeItem('autoSave')
         this.days = 0;
-        this.tileAttributes = [];
+        this.initializeTileAttributes();
         console.log('New game started.');
     }
     
@@ -228,7 +230,6 @@ export class Game extends Scene {
     create() {
         this.camera = this.cameras.main;
         this.background = this.add.tileSprite(0, 0, 1024, 768, 'background').setOrigin(0, 0);
-        this.loadAutoSave();
 
         // Define the initial level layout as a 5x5 grid of tiles
         const level = [
@@ -272,7 +273,6 @@ export class Game extends Scene {
                 }))
             );
         }
-
         // Create buttons for save/load slots
         const saveButtons: Phaser.GameObjects.Text[] = [];
         const loadButtons: Phaser.GameObjects.Text[] = [];
@@ -286,7 +286,7 @@ export class Game extends Scene {
                 padding: { x: 10, y: 5 }
             })
             .setInteractive()
-            .on('pointerdown', () => this.saveGameState(i + 1)); // Call saveGameState with slot number
+            .on('pointerdown', () => this.saveGameState(i + 1), false); // Call saveGameState with slot number
             saveButtons.push(saveButton);
 
             const loadButton = this.add.text(600, 50 + i * 40, `Load Slot ${i + 1}`, {
@@ -296,9 +296,10 @@ export class Game extends Scene {
                 padding: { x: 10, y: 5 }
             })
             .setInteractive()
-            .on('pointerdown', () => this.loadGameState(i + 1)); // Call loadGameState with slot number
+            .on('pointerdown', () => this.loadGameState(i + 1), false); // Call loadGameState with slot number
             loadButtons.push(loadButton);
         }
+        
 
         // Optionally add hover effects for buttons
         [...saveButtons, ...loadButtons].forEach(button => {
@@ -354,6 +355,7 @@ export class Game extends Scene {
                 }
             }
         });
+        this.askContinue();
     }
 
     // -------------------- Tile Management --------------------
@@ -390,6 +392,7 @@ export class Game extends Scene {
         if (tile.water >= plant.requiredWater && tile.sunEnergy >= plant.requiredSunEnergy) {
             tile.plant = { ...plant, growthStage: 0, daysPlanted: this.days };
             console.log(`Planted ${plant.name} at (${tileX}, ${tileY})`);
+            this.saveGameState(0, true);
         } else {
             console.log('Insufficient resources to plant here!');
         }
