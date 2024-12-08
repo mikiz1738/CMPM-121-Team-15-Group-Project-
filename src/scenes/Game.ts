@@ -27,6 +27,9 @@ export class Game extends Scene {
     tileAttributes: { water: number; sunEnergy: number; plant: any }[][];
     plantSprites: Phaser.GameObjects.Group;
 
+    undoStack: Uint8Array[] = [];
+    redoStack: Uint8Array[] = [];
+
     constructor() {
         super('Game');
         this.tileAttributes = [];
@@ -145,10 +148,15 @@ export class Game extends Scene {
         
         // Convert byte array to base64 string
         const base64String = btoa(String.fromCharCode(...byteArray));
-        
-        // Store the base64 string in localStorage with a slot-specific key
+
         const saveKey = isAutoSave ? 'autoSave' : `gameState_slot_${slot}`;
+        const undoKey = isAutoSave ? 'autoSaveUndoStack' : `undoStack_slot_${slot}`;
+        const redoKey = isAutoSave ? 'autoSaveRedoStack' : `redoStack_slot_${slot}`;
+    
+        // Store the base64 string in localStorage with a slot-specific key
         localStorage.setItem(saveKey, base64String);
+        localStorage.setItem(undoKey, JSON.stringify(this.undoStack));
+        localStorage.setItem(redoKey, JSON.stringify(this.redoStack));
         
         console.log(`${isAutoSave ? 'Auto' : 'Manual'} save completed!`);
     }
@@ -161,6 +169,24 @@ export class Game extends Scene {
             const byteArray = new Uint8Array(atob(base64String).split('').map(char => char.charCodeAt(0)));
             this.deserializeStateFromByteArray(byteArray);
             console.log(`Game loaded from slot ${slot}`);
+
+            // Load the undo/redo stacks for the specific slot
+            const undoKey = `undoStack_slot_${slot}`;
+            const redoKey = `redoStack_slot_${slot}`;
+
+            const undoStack = localStorage.getItem(undoKey);
+            const redoStack = localStorage.getItem(redoKey);
+            if (undoStack) {
+                this.undoStack = JSON.parse(undoStack);
+            } else {
+                this.undoStack = [];
+            }
+    
+            if (redoStack) {
+                this.redoStack = JSON.parse(redoStack);
+            } else {
+                this.redoStack = [];
+            }
         } else {
             console.log(`No saved game state found in slot ${slot}. Initializing empty state.`);
             this.initializeTileAttributes(); // Ensure the tiles are initialized when loading from an empty state
@@ -177,6 +203,22 @@ export class Game extends Scene {
             this.deserializeStateFromByteArray(byteArray);
             console.log(`${this.tileAttributes}`)
             console.log('Auto-save loaded.');
+
+            // Load the auto-save undo/redo stacks
+            const undoStack = localStorage.getItem('autoSaveUndoStack');
+            const redoStack = localStorage.getItem('autoSaveRedoStack');
+
+            if (undoStack) {
+                this.undoStack = JSON.parse(undoStack);
+            } else {
+                this.undoStack = [];
+            }
+
+            if (redoStack) {
+                this.redoStack = JSON.parse(redoStack);
+            } else {
+                this.redoStack = [];
+            }
         } else {
             console.log('No auto-save found.');
             this.startNewGame(); // Start a new game if there's no auto-save
@@ -225,6 +267,36 @@ export class Game extends Scene {
                 };
             }
         }
+    }
+
+    saveStateToUndoStack() {
+        const state = this.serializeStateToByteArray(); // Serialize current state
+        this.undoStack.push(state); // Push to undo stack
+        this.redoStack = []; // Clear the redo stack whenever a new action is performed
+    }
+
+    undo() {
+        if (this.undoStack.length > 0) {
+            const previousState = this.undoStack.pop();
+            if (previousState) {
+                this.redoStack.push(this.serializeStateToByteArray());
+                this.deserializeStateFromByteArray(previousState);
+            } else {
+                console.error("Failed to undo: previous state is undefined");
+            }
+        }
+    }
+
+    redo() {
+    if (this.redoStack.length > 0) {
+        const nextState = this.redoStack.pop();
+        if (nextState) {
+            this.undoStack.push(this.serializeStateToByteArray());
+            this.deserializeStateFromByteArray(nextState);
+        } else {
+            console.error("Failed to redo: next state is undefined");
+        }
+    }
     }
 
     create() {
@@ -276,6 +348,7 @@ export class Game extends Scene {
         // Create buttons for save/load slots
         const saveButtons: Phaser.GameObjects.Text[] = [];
         const loadButtons: Phaser.GameObjects.Text[] = [];
+
         const slots = 3; // Number of save slots
 
         for (let i = 0; i < slots; i++) {
@@ -306,6 +379,24 @@ export class Game extends Scene {
             button.on('pointerover', () => button.setStyle({ fill: '#ffff00' }));
             button.on('pointerout', () => button.setStyle({ fill: '#ffffff' }));
         });
+
+        this.add.text(20, 500, 'Undo', {
+            fontSize: '20px',
+            color: '#ffffff',
+            backgroundColor: '#00ff00',
+            padding: { x: 10, y: 5 }
+        })
+        .setInteractive()  
+        .on('pointerdown', () => this.undo());
+        
+        this.add.text(120, 500, 'Redo', {
+            fontSize: '20px',
+            color: '#ffffff',
+            backgroundColor: '#00ff00',
+            padding: { x: 10, y: 5 }
+        })
+        .setInteractive()  
+        .on('pointerdown', () => this.redo());
 
         createWalkAnimation(this);
         this.player = createPlayer(this);
@@ -392,6 +483,7 @@ export class Game extends Scene {
         if (tile.water >= plant.requiredWater && tile.sunEnergy >= plant.requiredSunEnergy) {
             tile.plant = { ...plant, growthStage: 0, daysPlanted: this.days };
             console.log(`Planted ${plant.name} at (${tileX}, ${tileY})`);
+            this.saveStateToUndoStack();
             this.saveGameState(0, true);
         } else {
             console.log('Insufficient resources to plant here!');
@@ -412,6 +504,8 @@ export class Game extends Scene {
         if (tile.plant) {
             console.log(`Reaped ${tile.plant.name} from (${tileX}, ${tileY})`);
             tile.plant = null; // Remove the plant
+            this.saveStateToUndoStack();
+            this.saveGameState(0, true);
         } else {
             console.log('No plant to reap here!');
         }
@@ -422,6 +516,7 @@ export class Game extends Scene {
     advanceDay() {
         this.days++;
         this.msg_text.setText(`Day: ${this.days}`);
+        this.saveStateToUndoStack();
     
         for (let y = 0; y < this.tileAttributes.length; y++) {
             for (let x = 0; x < this.tileAttributes[y].length; x++) {
