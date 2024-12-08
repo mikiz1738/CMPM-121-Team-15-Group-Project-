@@ -129,3 +129,27 @@ export function createMovementKeys(scene: Game) {
         space: Phaser.Input.Keyboard.KeyCodes.SPACE,
     }) as Phaser.Types.Input.Keyboard.CursorKeys;
 }
+
+// Displays information about the tile under the cursor when hovering
+export function handlePointerHover(scene: Game, pointer: Phaser.Input.Pointer) {
+    const tileX = Math.floor((pointer.x - scene.offsetX) / scene.tileWidth);
+    const tileY = Math.floor((pointer.y - scene.offsetY) / scene.tileHeight);
+
+    if (
+        tileX >= 0 &&
+        tileY >= 0 &&
+        tileY < scene.tileAttributes.length &&
+        tileX < scene.tileAttributes[tileY].length
+    ) {
+        const tile = scene.tileAttributes[tileY][tileX];
+        scene.hover_text.setText(
+            `Sun: ${tile.sunEnergy.toFixed(2)}\nWater: ${tile.water.toFixed(2)}${
+                tile.plant ? `\nPlant: ${tile.plant.name} (Stage: ${tile.plant.growthStage})` : ''
+            }`
+        );
+        scene.hover_text.setPosition(pointer.x + 10, pointer.y + 10);
+        scene.hover_text.setVisible(true);
+    } else {
+        scene.hover_text.setVisible(false);
+    }
+}
