@@ -13,20 +13,20 @@ export class MainMenu extends Scene
 
     // Start the game with the selected mode
     startGame(mode: string) {
-    // Load the config for the selected mode
-        this.loadConfig(mode);
+    // Load the externalDSL for the selected mode
+        this.loadexternalDSL(mode);
     }
         
-    loadConfig(mode: string) {
-    // Load config.json (could be from a local file or server)
-        fetch('config.json')
+    loadexternalDSL(mode: string) {
+    // Load externalDSL.json (could be from a local file or server)
+        fetch('src/externalDSL.json')
         .then(response => response.json())
-        .then(config => {
-            const selectedConfig = mode === 'tutorial' ? config.tutorial : config.normal;
-            this.scene.start('Game', { mode: mode, config: selectedConfig });
+        .then(externalDSL => {
+            const selectedexternalDSL = mode === 'tutorial' ? externalDSL.tutorial : externalDSL.normal;
+            this.scene.start('Game', { mode: mode, externalDSL: selectedexternalDSL });
             })
             .catch(error => {
-                console.error('Error loading config:', error);
+                console.error('Error loading ExternalDSL:', error);
                 });
     }
 

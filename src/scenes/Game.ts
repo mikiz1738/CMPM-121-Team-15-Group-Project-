@@ -304,15 +304,15 @@ export class Game extends Scene {
     }
     }
 
-    create(data: { mode: any; config: any; }) {
+    create(data: { mode: any; externalDSL: any; }) {
         // Accessing parameters passed from the previous scene
         const mode = data.mode; // Access the mode parameter
-        const config = data.config; // Access the config parameter
+        const externalDSL = data.externalDSL; // Access the externalDSL parameter
         console.log(mode)
         
-        this.levelWidth = config.levelWidth;
-        this.levelHeight = config.levelHeight;
-        this.winCondition = config.winCondition;
+        this.levelWidth = externalDSL.levelWidth;
+        this.levelHeight = externalDSL.levelHeight;
+        this.winCondition = externalDSL.winCondition;
 
         this.camera = this.cameras.main;
         this.background = this.add.tileSprite(0, 0, 1024, 768, 'background').setOrigin(0, 0);

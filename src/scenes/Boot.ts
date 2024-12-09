@@ -21,7 +21,7 @@ export class Boot extends Scene
         this.load.image('cactus', 'assets/tempplant2.png')
         this.load.image('sunflower', 'assets/tempplant1.png')
         this.load.image('corn', 'assets/tempplant3.png')
-        this.load.json('config', 'config.json')
+        this.load.json('externalDSL', '../src/externalDSL.json')
     }
 
     create ()

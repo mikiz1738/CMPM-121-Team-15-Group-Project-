@@ -6,9 +6,9 @@ import { Preloader } from './scenes/Preloader';
 
 import { Game, Types } from "phaser";
 
-//  Find out more information about the Game Config at:
+//  Find out more information about the Game externalDSL at:
 //  https://newdocs.phaser.io/docs/3.70.0/Phaser.Types.Core.GameConfig
-const config: Types.Core.GameConfig = {
+const externalDSL: Types.Core.GameConfig = {
     type: Phaser.AUTO,
     width: 1024,
     height: 768,
@@ -33,4 +33,4 @@ const config: Types.Core.GameConfig = {
     }
 };
 
-export default new Game(config);
+export default new Game(externalDSL);
