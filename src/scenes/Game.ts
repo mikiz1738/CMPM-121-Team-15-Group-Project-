@@ -3,6 +3,7 @@ import { Scene } from 'phaser';
 import { createPlantButtons, plantTypes , updateButtonHighlights } from './helpers';
 import { createWalkAnimation, createPlayer , createMovementKeys } from './helpers';
 import { handlePointerHover } from './helpers.js';
+import i18next from './Internalization.ts';
 
 export class Game extends Scene {
     camera: Phaser.Cameras.Scene2D.Camera;
@@ -423,6 +424,18 @@ export class Game extends Scene {
             backgroundColor: '#000000',
             padding: { x: 5, y: 5 },
         }).setVisible(false);
+
+        this.add.text(this.scale.width - 150, 10, i18next.t('Instructions'), {
+            fontSize: '20px',
+            color: '#ffffff',
+            backgroundColor: '#ff7700',
+            padding: { x: 10, y: 5 },
+        })
+        .setInteractive()
+        .on('pointerdown', () => {
+            this.scene.pause(); // Pause the Game Scene
+            this.scene.launch('HelpScene'); // Launch the Help Scene
+        });
 
         this.cursors = createMovementKeys(this);
         this.plantSprites = this.add.group();
