@@ -33,7 +33,22 @@ Ours is called an Adjacent Buddy Boost where if a plant is next to another plant
 
 [F0.g] The play scenario is completed when a specific condition is met, such as having a certain number of plants (e.g., 5) fully grown (growth stage 2). The system tracks the number of plants that have reached the required growth level, and once the condition is satisfied, the scenario is considered complete, and the player is notified of their success.
 
-Reflection:
+[F1.a] The important state of the game's grid is backed by a Structure-of-Arrays (SoA) format. Each piece of the grid, such as plant types, growth stages, and environmental factors (e.g., soil moisture), is stored as a separate array. This allows for efficient updates and access patterns. The primary grid is encoded in this SoA format, and when needed, auxiliary structures such as visual representations of the grid or metadata are decoded from it on the fly.
+
+[F1.b] The player can manually save their progress through an in-game menu that allows them to name, save, and load their game. Multiple 3 save slots are available, each one representing a separate save file with unique state data, ensuring that players can load from their last progress point even after quitting the game. Each save file contains a snapshot of the entire game state, including the grid and player progress.
+
+[F1.c] The game has an auto-save system that automatically saves the current game state at regular intervals or when certain milestones are reached. Upon restarting the game, if an auto-save file exists, the player is prompted with a message asking whether they want to continue from where they left off. The auto-save file can be managed alongside manual save files.
+
+[F1.d] An undo/redo system is in place, allowing the player to undo every major choice, such as planting up to the start of the game. The player can also redo any actions that were undone, enabling them to experiment. The undo history is stored and persisted in a manner that supports both manual saves and auto-saves.
+
+Reflection (F0):
 Looking back on how we achieved the F0 requirements, our initial plan has evolved somewhat in response to challenges and new insights during development. At the start, we focused heavily on implementing basic movement and plant interactions, but we quickly realized that the requirements called for more complex systems like balancing the growth mechanics with sun and water resources.
 
 As we worked on the game, we also reconsidered some of our tools and materials. For example, we initially thought we could handle all plant growth and grid cell updates in a simple loop, but we ended up using flags and more intricate condition-checking logic to ensure that growth stages were tracked accurately and the scenario completion was triggered correctly.
+
+Reflection (F1):
+In the beginning of our development process, we focused on implementing basic features like plant growth and grid management. The F1 requirements, which include manual saving, auto-saving, and undo/redo, have guided us to think more deeply about the core mechanics and data management in our game. We initially thought our grid state management would be simple, but as we incorporated more complex systems, we realized we needed a more efficient way to store and access state. This led to adopting a single contiguous byte array for our grid state in AoS format, which allows us to track and decode plant growth and other attributes efficiently.
+
+While our choice of development tools (TypeScript with Phaser) has remained the same, we’ve adjusted our approach to handling game state and saving mechanics. Initially, we planned to implement a straightforward save/load system, but we’ve since incorporated a more robust auto-save feature to prevent players from losing progress unexpectedly. This means that instead of just saving on explicit player actions, we now automatically save at regular intervals and whenever major events occur, such as completing a day cycle. This change required us to implement a more sophisticated system for handling save files, allowing the player to load from multiple save slots and continue their game where they left off.
+
+The most significant shift in our design came with giving the player control over their actions with undo/redo features. This has made us rethink how we present feedback to the player, ensuring that the interface is intuitive and that the player is clearly informed of the consequences of their actions.
