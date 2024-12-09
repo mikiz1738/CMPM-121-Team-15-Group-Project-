@@ -1,8 +1,9 @@
-// Helper functions for plant management, Plant Button Creation, 
-// Pointer Interaction Handling, tile interaction, etc.
 import Phaser from 'phaser';
 import { Game } from './Game.ts';  // Assuming Game is exported from the correct file
+import { InternalDSL } from '../InternalDSL.ts'; // Import the internal DSL
+import externalDSL from '../externalDSL.json' with { type: 'json' }; // Import external DSL JSON
 
+export const plantTypes = InternalDSL.fromJSON(JSON.stringify(externalDSL)).plants;
 
 export interface Plant {
     name: string;
@@ -14,39 +15,6 @@ export interface Plant {
     daysPlanted: number;
     hasReachedMaxGrowth: boolean;
 }
-
-export const plantTypes = [
-    { 
-        name: 'Cactus', 
-        requiredWater: 2, 
-        requiredSunEnergy: 6, 
-        growthTime: 12, 
-        sprite: 'cactus', 
-        growthStage: 0,
-        daysPlanted: 0,
-        hasReachedMaxGrowth: false,
-    },
-    { 
-        name: 'Sunflower', 
-        requiredWater: 4, 
-        requiredSunEnergy: 8, 
-        growthTime: 10, 
-        sprite: 'sunflower' ,
-        growthStage: 0,
-        daysPlanted: 0,
-        hasReachedMaxGrowth: false,
-    },
-    { 
-        name: 'Corn', 
-        requiredWater: 8, 
-        requiredSunEnergy: 4, 
-        growthTime: 8, 
-        sprite: 'corn',
-        growthStage: 0,
-        daysPlanted: 0,
-        hasReachedMaxGrowth: false,
-    },
-];
 
 // Creates buttons for each plant type for the player to select
 export function createPlantButtons(scene: Game) {
