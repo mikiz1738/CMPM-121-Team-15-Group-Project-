@@ -11,6 +11,25 @@ export class MainMenu extends Scene
         super('MainMenu');
     }
 
+    // Start the game with the selected mode
+    startGame(mode: string) {
+    // Load the config for the selected mode
+        this.loadConfig(mode);
+    }
+        
+    loadConfig(mode: string) {
+    // Load config.json (could be from a local file or server)
+        fetch('config.json')
+        .then(response => response.json())
+        .then(config => {
+            const selectedConfig = mode === 'tutorial' ? config.tutorial : config.normal;
+            this.scene.start('Game', { mode: mode, config: selectedConfig });
+            })
+            .catch(error => {
+                console.error('Error loading config:', error);
+                });
+    }
+
     create ()
     {
         this.background = this.add.tileSprite(0, 0, 1024, 768, 'background').setOrigin(0,0);
@@ -21,10 +40,22 @@ export class MainMenu extends Scene
             align: 'center'
         }).setOrigin(0.5);
 
-        this.input.once('pointerdown', () => {
+        // this.input.once('pointerdown', () => {
 
-            this.scene.start('Game');
+        //     this.scene.start('Game');
 
+        // });
+
+        // Create buttons for Normal Mode and Tutorial Mode
+        const normalButton = this.add.text(300, 200, 'Normal Mode', { font: '32px Arial' }).setInteractive();
+        const tutorialButton = this.add.text(300, 300, 'Tutorial Mode', { font: '32px Arial'}).setInteractive();
+        
+        normalButton.on('pointerdown', () => {
+            this.startGame('normal');
+        });
+        
+        tutorialButton.on('pointerdown', () => {
+            this.startGame('tutorial');
         });
     }
 }

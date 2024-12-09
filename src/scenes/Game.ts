@@ -15,10 +15,13 @@ export class Game extends Scene {
     days: number;
     tileWidth: number;
     tileHeight: number;
+    levelWidth: number;
+    levelHeight: number;
     offsetX: number;
     offsetY: number;
     
     victoryScenario: boolean = false; // Track if the scenario is completed
+    winCondition: number; 
     fullyGrownPlants: number = 0; // Track the number of fully grown plants
 
     plantTypes = plantTypes;  // Store plant types here
@@ -227,13 +230,15 @@ export class Game extends Scene {
     
     askContinue() {
         // Prompt the player to continue from the auto-save
-        if (confirm("Do you want to continue where you left off?")) {
-            console.log('Continuing from auto-save...');
-            this.loadAutoSave()
-            console.log(`${this.tileAttributes}`)
-        } else {
-            console.log('Starting new game...');
-            this.startNewGame();
+        if (localStorage.getItem('autoSave')) {
+            if (confirm("Do you want to continue where you left off?")) {
+                console.log('Continuing from auto-save...');
+                this.loadAutoSave()
+                console.log(`${this.tileAttributes}`)
+            } else {
+                console.log('Starting new game...');
+                this.startNewGame();
+            }
         }
     }
     
@@ -299,18 +304,22 @@ export class Game extends Scene {
     }
     }
 
-    create() {
+    create(data: { mode: any; config: any; }) {
+        // Accessing parameters passed from the previous scene
+        const mode = data.mode; // Access the mode parameter
+        const config = data.config; // Access the config parameter
+        console.log(mode)
+        
+        this.levelWidth = config.levelWidth;
+        this.levelHeight = config.levelHeight;
+        this.winCondition = config.winCondition;
+
         this.camera = this.cameras.main;
         this.background = this.add.tileSprite(0, 0, 1024, 768, 'background').setOrigin(0, 0);
 
         // Define the initial level layout as a 5x5 grid of tiles
-        const level = [
-            [0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0],
-        ];
+        const level = Array.from({ length: this.levelHeight }, () => Array(this.levelWidth).fill(0));
+
 
         const map = this.make.tilemap({ data: level, tileWidth: this.tileWidth, tileHeight: this.tileHeight });
         const tiles = map.addTilesetImage('dirt');
@@ -568,10 +577,11 @@ export class Game extends Scene {
 
     // Check if the play scenario is completed
     checkvictoryCompletion() {
-        if (this.fullyGrownPlants >= 5 && !this.victoryScenario) {
+        if (this.fullyGrownPlants >= this.winCondition && !this.victoryScenario) {
             this.victoryScenario = true;
-            console.log('Victory! At least 5 plants are fully grown.');
+            console.log(`Victory! At least ${this.winCondition} plants are fully grown.`);
             this.msg_text.setText(`Day: ${this.days} - Scenario Completed!`);
+            this.scene.start('GameOver')
         }
     }
 

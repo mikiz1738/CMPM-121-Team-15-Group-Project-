@@ -1,0 +1,44 @@
+{
+    "normal": {
+        "levelWidth": 5,
+        "levelHeight": 5,
+        "winCondition": 5
+    },
+    "tutorial": {
+        "levelWidth": 3,
+        "levelHeight": 3,
+        "winCondition": 2
+    },
+    "plants": [
+        { 
+            "name": "Cactus", 
+            "requiredWater": 2, 
+            "requiredSunEnergy": 6, 
+            "growthTime": 12, 
+            "sprite": "cactus", 
+            "growthStage": 0,
+            "daysPlanted": 0,
+            "hasReachedMaxGrowth": false
+        },
+        { 
+            "name": "Sunflower", 
+            "requiredWater": 4, 
+            "requiredSunEnergy": 8, 
+            "growthTime": 10, 
+            "sprite": "sunflower",
+            "growthStage": 0,
+            "daysPlanted": 0,
+            "hasReachedMaxGrowth": false
+        },
+        { 
+            "name": "Corn", 
+            "requiredWater": 8, 
+            "requiredSunEnergy": 4, 
+            "growthTime": 8, 
+            "sprite": "corn",
+            "growthStage": 0,
+            "daysPlanted": 0,
+            "hasReachedMaxGrowth": false
+        }
+    ]
+}
