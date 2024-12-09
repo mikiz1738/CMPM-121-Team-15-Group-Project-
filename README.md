@@ -41,6 +41,71 @@ Ours is called an Adjacent Buddy Boost where if a plant is next to another plant
 
 [F1.d] An undo/redo system is in place, allowing the player to undo every major choice, such as planting up to the start of the game. The player can also redo any actions that were undone, enabling them to experiment. The undo history is stored and persisted in a manner that supports both manual saves and auto-saves.
 
+[F2.a] Our external DSL for scenario design is based on JSON, a widely-used and easily understandable data language that offers simplicity and compatibility with our existing development tools. We chose JSON because it is human-readable, supports hierarchical data structures, and can be parsed efficiently by TypeScript, which aligns with our game development framework. By using JSON, we ensure that designers can define scenarios in a straightforward format without needing to understand the intricacies of our codebase.
+
+externalDSL.json
+'''
+{
+    "normal": {
+        "levelWidth": 5,
+        "levelHeight": 5,
+        "winCondition": 5
+    },
+    "tutorial": {
+        "levelWidth": 3,
+        "levelHeight": 3,
+        "winCondition": 2
+    }
+}
+'''
+
+This DSL defines two scenarios: normal and tutorial.
+
+Normal Scenario:
+
+The grid dimensions are 5x5 (5 cells wide and 5 cells tall).
+The victory condition is to grow 5 plants to their maximum growth level.
+
+Tutorial Scenario:
+
+The grid dimensions are smaller at 3x3 (3 cells wide and 3 cells tall).
+The victory condition is simpler: the player needs to grow 2 plants to their maximum growth level.
+
+Each scenario is encapsulated as a key-value pair in the JSON structure, making it easy to add, modify, or remove scenarios as needed. This structure also allows designers to define different levels by specifying key attributes such as grid size, winning criteria, or other potential gameplay parameters like resource availability or event timing. The modularity of JSON ensures that the system is both scalable and accessible to designers without requiring significant technical expertise.
+
+[F2.b] Our internal DSL is implemented in TypeScript, leveraging its type safety and rich support for object-oriented programming. It provides a structured yet flexible way to represent and manipulate plant data within the game. Below, the internal DSL is used to define and handle plant types, focusing on how it complements the external DSL while allowing advanced functionality through TypeScript features.
+
+Example:
+
+'''
+import { InternalDSL } from './internalDSL.ts';
+import externalDSL from './externalDSL.json';
+
+const plantData = new InternalDSL(externalDSL);
+
+console.log(plantData.plants); // Outputs the array of plant objects initialized from JSON
+'''
+
+The internal DSL reads plant definitions from the external DSL (JSON) and maps them to the Plant interface. Each plant's data is initialized with attributes like water and sunlight requirements, growth time, and growth stage.
+
+'''
+import { internalDSL } from './internalDSL.ts';
+
+const plants = internalDSL.plants;
+
+// Simulate plant growth
+plants.forEach((plant) => {
+    console.log(`Growing plant: ${plant.name}`);
+    internalDSL.growPlant(plant, 6); // Simulate 6 days of growth
+    console.log(`${plant.name} growth stage: ${plant.growthStage}`);
+});
+'''
+
+The growPlant method uses the logic to update a plant's growth stage based on the number of days it has been planted. If the days exceed half the required growth time, the plant moves to a half-grown stage. Once the full growth time is reached, the plant is marked as fully grown.
+
+Overall,by using TypeScript, the internal DSL benefits from type definitions, methods, and runtime logic, which would be challenging to implement in a pure external DSL. Thus, TypeScript allows for sophisticated data manipulation, ensuring the game logic stays robust and maintainable while enabling advanced features like debugging and intellisense in modern IDEs.
+
+
 Reflection (F0):
 Looking back on how we achieved the F0 requirements, our initial plan has evolved somewhat in response to challenges and new insights during development. At the start, we focused heavily on implementing basic movement and plant interactions, but we quickly realized that the requirements called for more complex systems like balancing the growth mechanics with sun and water resources.
 
@@ -52,3 +117,8 @@ In the beginning of our development process, we focused on implementing basic fe
 While our choice of development tools (TypeScript with Phaser) has remained the same, we’ve adjusted our approach to handling game state and saving mechanics. Initially, we planned to implement a straightforward save/load system, but we’ve since incorporated a more robust auto-save feature to prevent players from losing progress unexpectedly. This means that instead of just saving on explicit player actions, we now automatically save at regular intervals and whenever major events occur, such as completing a day cycle. This change required us to implement a more sophisticated system for handling save files, allowing the player to load from multiple save slots and continue their game where they left off.
 
 The most significant shift in our design came with giving the player control over their actions with undo/redo features. This has made us rethink how we present feedback to the player, ensuring that the interface is intuitive and that the player is clearly informed of the consequences of their actions.
+
+Reflection (F2):
+Looking back on how we achieved the new F2 requirements, our team's plan and approach have undergone several adjustments as we integrated the external and internal DSLs and refined our design goals. Initially, we planned to create an alternate platform for our game by shifting from TypeScript to JavaScript. However, after considering the technical complexity and the integration challenges this would introduce with our DSLs and other game features, we decided to stick with TypeScript. This decision was influenced by our growing understanding of how deeply our design choices (like the external and internal DSLs) are intertwined with the TypeScript, and switching languages would require us to rework key parts of our game, adding unnecessary overhead. Staying with TypeScript has allowed us to streamline development, as we can better utilize its type-checking capabilities and advanced tooling, making our DSLs easier to manage and ensuring that our design patterns stay consistent.
+
+For the roles, ur team’s approach to roles also shifted significantly. Initially, we had a clear division of responsibilities: Justin Xu as Tools Lead, Michael Wong as Engine Lead, and Vivian Kim as Design Lead. This structure gave us a strong starting point, but as the project progressed and the tasks became more interconnected and challenging, so we found ourselves naturally gravitating toward a more collaborative approach.
