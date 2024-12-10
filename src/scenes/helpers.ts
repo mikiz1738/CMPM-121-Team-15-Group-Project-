@@ -75,7 +75,7 @@ export function updateButtonHighlights(scene: Game) {
 export function createWalkAnimation(scene: Game) {
     scene.anims.create({
         key: 'walk',
-        frames: scene.anims.generateFrameNumbers('player', { start: 1, end: 5 }),
+        frames: scene.anims.generateFrameNumbers('player', { start: 1, end: 2 }),
         frameRate: 10,
         repeat: -1,
     });
@@ -84,7 +84,7 @@ export function createWalkAnimation(scene: Game) {
 export function createPlayer(scene: Game) {
     const player = scene.physics.add.sprite(scene.scale.width / 2, scene.scale.height / 2, 'player');
     player.setCollideWorldBounds(true);
-    player.setScale(2);
+    player.setScale(.4);
     return player;
 }
 

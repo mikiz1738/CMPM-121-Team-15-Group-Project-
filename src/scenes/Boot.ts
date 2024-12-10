@@ -12,15 +12,15 @@ export class Boot extends Scene
         //  The Boot Scene is typically used to load in any assets you require for your Preloader, such as a game logo or background.
         //  The smaller the file size of the assets, the better, as the Boot Scene itself has no preloader.
 
-        this.load.image('background', 'assets/tempgrassbg.png')
-        this.load.image('dirt', 'assets/tempdirt.png')
-        this.load.spritesheet('player', 'assets/Woman_Walk.png', {
-            frameWidth: 22, // Width of each frame in the spritesheet
-            frameHeight: 33 // Height of each frame in the spritesheet
+        this.load.image('background', 'assets/Grass_Tile.gif')
+        this.load.image('dirt', 'assets/Dirt Tile.gif')
+        this.load.spritesheet('player', 'assets/PigWalk.png', {
+            frameWidth: 240, // Width of each frame in the spritesheet
+            frameHeight: 330 // Height of each frame in the spritesheet
         });
-        this.load.image('cactus', 'assets/tempplant2.png')
-        this.load.image('sunflower', 'assets/tempplant1.png')
-        this.load.image('corn', 'assets/tempplant3.png')
+        this.load.image('cactus', 'assets/Cactus.gif')
+        this.load.image('sunflower', 'assets/Sunflower.gif')
+        this.load.image('corn', 'assets/Corn.gif')
         this.load.json('externalDSL', '../src/externalDSL.json')
     }
 
