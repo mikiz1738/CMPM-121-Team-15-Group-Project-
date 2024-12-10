@@ -425,7 +425,7 @@ export class Game extends Scene {
             padding: { x: 5, y: 5 },
         }).setVisible(false);
 
-        this.add.text(this.scale.width - 150, 10, i18next.t('Instructions'), {
+        this.add.text(this.scale.width - 170, 10, i18next.t('Instructions'), {
             fontSize: '20px',
             color: '#ffffff',
             backgroundColor: '#ff7700',
