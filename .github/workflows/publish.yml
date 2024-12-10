@@ -1,4 +1,4 @@
-name: Publish to GitHub Pages
+name: Publish
 
 on:
   push:
@@ -26,11 +26,4 @@ jobs:
       - name: Run tests
         run: npm test  # Adjust this command based on how you run tests in your project
 
-      - name: Build Project
-        run: npm run build  # Adjust this based on your build command
-
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./build  # Adjust if your build output directory is different
+      # Add additional steps here if you want to publish your project after testing

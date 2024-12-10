@@ -6,7 +6,7 @@ export class HelpScene extends Phaser.Scene {
     }
 
     create() {
-        this.cameras.main.setBackgroundColor('#7702c4'); // Set background color to black
+        this.cameras.main.setBackgroundColor('#000000'); // Set background color to black
 
         const englishButton = this.add.text(100, 100, 'English', { fontSize: '20px'})
             .setInteractive({ useHandCursor: true })
