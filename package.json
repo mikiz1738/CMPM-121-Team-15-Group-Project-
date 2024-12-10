@@ -14,13 +14,15 @@
     },
     "homepage": "https://github.com/phaserjs/template-vite-ts#readme",
     "scripts": {
-        "dev": "node log.js dev & vite --config vite/config.dev.mjs",
-        "build": "node log.js build & vite build --config vite/config.prod.mjs",
+        "dev": "node log.js dev && vite --config vite/config.dev.mjs",
+        "build": "node log.js build && vite build --config vite/config.prod.mjs",
         "dev-nolog": "vite --config vite/config.dev.mjs",
-        "build-nolog": "vite build --config vite/config.prod.mjs"
+        "build-nolog": "vite build --config vite/config.prod.mjs",
+        "deploy": "npm run build && gh-pages -d dist"
     },
     "devDependencies": {
         "@vitejs/plugin-vue": "^5.2.1",
+        "gh-pages": "^6.2.0",
         "terser": "^5.31.0",
         "typescript": "^5.4.5",
         "vite": "^5.3.1"
