@@ -105,6 +105,15 @@ The growPlant method uses the logic to update a plant's growth stage based on th
 
 Overall,by using TypeScript, the internal DSL benefits from type definitions, methods, and runtime logic, which would be challenging to implement in a pure external DSL. Thus, TypeScript allows for sophisticated data manipulation, ensuring the game logic stays robust and maintainable while enabling advanced features like debugging and intellisense in modern IDEs.
 
+[F2.d] Due to time constraints and the complexity of our project, we were unfortunately not able to switch to an alternate platform, as it would require us to rework significant portions of our code. 
+
+[F3.a] To change languages, the player is able to load a list of translated messages for the instructions, located in our Internationalization.ts file.
+
+[F3.b] Our game also supports two other languages besides english, one utilizing a logographic script, Arabic, and the other using a right to left script, Chinese within the instructions tab of our game. In order to translate the English text to the other two languages, we utilized ChatGPT to assist us. 
+
+[F3.c] As our project was growing larger in scope, it made it difficult for us to experiment with making the game installable on a smartphone-class mobile device, so we were unfortunatley not able to reach this step in our development. 
+
+[F3.d] Similarly to F3.d, since we were not able to meet the pace of our scope given the time constraints that we had, were not able to make a mobile installation that could be played even when the device is not connected to the internet. 
 
 Reflection (F0):
 Looking back on how we achieved the F0 requirements, our initial plan has evolved somewhat in response to challenges and new insights during development. At the start, we focused heavily on implementing basic movement and plant interactions, but we quickly realized that the requirements called for more complex systems like balancing the growth mechanics with sun and water resources.
@@ -122,3 +131,6 @@ Reflection (F2):
 Looking back on how we achieved the new F2 requirements, our team's plan and approach have undergone several adjustments as we integrated the external and internal DSLs and refined our design goals. Initially, we planned to create an alternate platform for our game by shifting from TypeScript to JavaScript. However, after considering the technical complexity and the integration challenges this would introduce with our DSLs and other game features, we decided to stick with TypeScript. This decision was influenced by our growing understanding of how deeply our design choices (like the external and internal DSLs) are intertwined with the TypeScript, and switching languages would require us to rework key parts of our game, adding unnecessary overhead. Staying with TypeScript has allowed us to streamline development, as we can better utilize its type-checking capabilities and advanced tooling, making our DSLs easier to manage and ensuring that our design patterns stay consistent.
 
 For the roles, ur team’s approach to roles also shifted significantly. Initially, we had a clear division of responsibilities: Justin Xu as Tools Lead, Michael Wong as Engine Lead, and Vivian Kim as Design Lead. This structure gave us a strong starting point, but as the project progressed and the tasks became more interconnected and challenging, so we found ourselves naturally gravitating toward a more collaborative approach.
+
+Reflection (F3):
+Throughout this stage in our development, we primarily focused on integrating translations as seen through steps F3.a and F3.b. Building upon the previous F0, F1, F2 requirements, we attempted to add on to the text message UI from previous assignments by adding a help screen that would allow the player to change the text to their desired language. Much like the previous devlog, we realized that the roles that we initially planned out for ourselves would intersect, leading to each team member having to take on multiple responsibilities that were initially assigned to different people. Given our current changes, our design is much more supporting when it comes to giving the player more feedback as the help tab makes it easier for players to read and understand the process of how our game functions. 
